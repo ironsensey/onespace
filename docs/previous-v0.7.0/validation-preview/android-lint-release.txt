@@ -1,0 +1,224 @@
+/workspace/OneSpace-Pi-Hub-Preview/android/app/build.gradle.kts:48: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdk = 35
+        ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "OldTargetApi":
+   When your application or sdk runs on a version of Android that is more
+   recent than your targetSdkVersion specifies that it has been tested with,
+   various compatibility modes kick in. This ensures that your application
+   continues to work, but it may look out of place. For example, if the
+   targetSdkVersion is less than 14, your app may get an option button in the
+   UI.
+
+   To fix this issue, set the targetSdkVersion to the highest available value.
+   Then test your app to make sure everything works correctly. You may want to
+   consult the compatibility notes to see what changes apply to each version
+   you are adding support for:
+   https://developer.android.com/reference/android/os/Build.VERSION_CODES.html
+   as well as follow this guide:
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.
+   html
+
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.html
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/AndroidManifest.xml:14: Warning: Your app is currently not handling Selected Photos Access introduced in Android 14+ [SelectedPhotoAccess]
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "SelectedPhotoAccess":
+   Selected Photo Access is a new ability for users to share partial access to
+   their photo library when apps request access to their device storage on
+   Android 14+.
+
+   Instead of letting the system manage the selection lifecycle, we recommend
+   you adapt your app to handle partial access to the photo library.
+
+   https://developer.android.com/about/versions/14/changes/partial-photo-video-access
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubApi.kt:28: Warning: Implementing a custom X509TrustManager is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation. [CustomX509TrustManager]
+            val trust = object : X509TrustManager {
+                        ~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/OneSpaceApi.kt:33: Warning: Implementing a custom X509TrustManager is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation. [CustomX509TrustManager]
+        val trust = object : X509TrustManager {
+                    ~~~~~~
+
+   Explanation for issues of type "CustomX509TrustManager":
+   This check looks for custom X509TrustManager implementations.
+
+   https://goo.gle/CustomX509TrustManager
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/AndroidManifest.xml:16: Warning: The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
+    <application android:allowBackup="false" android:label="OneSpace" android:theme="@android:style/Theme.Material.NoActionBar" android:usesCleartextTraffic="false" android:supportsRtl="true">
+                                      ~~~~~
+
+   Explanation for issues of type "DataExtractionRules":
+   Before Android 12, the attributes android:allowBackup and
+   android:fullBackupContent were used to configure all forms of backup,
+   including cloud backups, device-to-device transfers and adb backup.
+
+   In Android 12 and higher, these attributes have been deprecated and will
+   only apply to cloud backups. You should instead use the attribute
+   android:dataExtractionRules, specifying an @xml resource that configures
+   which files to back up, for cloud backups and for device-to-device
+   transfers, separately. If your minSdkVersion supports older versions,
+   you'll still want to specify an android:fullBackupContent resource if the
+   default behavior is not right for your app.
+
+   https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   https://goo.gle/DataExtractionRules
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/BootReceiver.kt:16: Warning: Unnecessary; SDK_INT is always >= 29 [ObsoleteSdkInt]
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(start)
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/OneSpaceUpdater.kt:102: Warning: Unnecessary; SDK_INT is always >= 29 [ObsoleteSdkInt]
+        if (Build.VERSION.SDK_INT >= 26 && !pm.canRequestPackageInstalls()) {
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/ReceiveStore.kt:49: Warning: Unnecessary; SDK_INT is never < 29 [ObsoleteSdkInt]
+        if (Build.VERSION.SDK_INT < 29) return
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "ObsoleteSdkInt":
+   This check flags version checks that are not necessary, because the
+   minSdkVersion (or surrounding known API level) is already at least as high
+   as the version checked for.
+
+   Similarly, it also looks for resources in -vNN folders, such as values-v14
+   where the version qualifier is less than or equal to the minSdkVersion,
+   where the contents should be merged into the best folder.
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/res/layout/widget_quick.xml:4: Warning: Possible overdraw: Root element paints background #1B2940 with a theme that also paints a background (inferred theme is @android:style/Theme.Material.NoActionBar) [Overdraw]
+    android:orientation="vertical" android:padding="15dp" android:gravity="center_vertical" android:background="#1B2940">
+                                                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "Overdraw":
+   If you set a background drawable on a root view, then you should use a
+   custom theme where the theme background is null. Otherwise, the theme
+   background will be painted first, only to have your custom background
+   completely cover it; this is called "overdraw".
+
+   NOTE: This detector relies on figuring out which layouts are associated
+   with which activities based on scanning the Java code, and it's currently
+   doing that using an inexact pattern matching algorithm. Therefore, it can
+   incorrectly conclude which activity the layout is associated with and then
+   wrongly complain that a background-theme is hidden.
+
+   If you want your custom background on multiple pages, then you should
+   consider making a custom theme with your custom background and just using
+   that theme instead of a root element background.
+
+   Of course it's possible that your custom drawable is translucent and you
+   want it to be mixed with the background. However, you will get better
+   performance if you pre-mix the background with your drawable and use that
+   resulting image or color as a custom theme background instead.
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/res/values/strings.xml:1: Warning: The resource R.string.app_name appears to be unused [UnusedResources]
+<resources><string name="app_name">OneSpace</string></resources>
+                   ~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/AndroidManifest.xml:16: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]
+    <application android:allowBackup="false" android:label="OneSpace" android:theme="@android:style/Theme.Material.NoActionBar" android:usesCleartextTraffic="false" android:supportsRtl="true">
+     ~~~~~~~~~~~
+
+   Explanation for issues of type "MissingApplicationIcon":
+   You should set an icon for the application as whole because there is no
+   default. This attribute must be set as a reference to a drawable resource
+   containing the image (for example @drawable/icon).
+
+   https://developer.android.com/studio/publish/preparing#publishing-configure
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:51: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        status = TextView(this).apply { setTextColor(Color.CYAN); text = "Pi live camera · recording disabled"; textSize = 18f }
+                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:61: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        status.text = "Live camera locked"
+                       ~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:63: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            text = "Unlock live view"
+                    ~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:68: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                else status.text = "Enable an Android screen lock first"
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:101: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+        status.text = "Live only · establishing authenticated WebRTC"
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:129: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                            status.text = "Live only · video connection negotiating"
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/HubCameraActivity.kt:133: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+                    runOnUiThread { if (generation.get() == attempt) status.text = "Live view unavailable: check camera scope, hub, camera publisher and overlay ICE route" }
+                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/MainActivity.kt:442: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            val route = Switch(this).apply { this.text = "Use verified private overlay PC route"; setTextColor(Color.WHITE); isChecked = PcRoute.enabled(this@MainActivity) }
+                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/java/com/onespace/companion/MainActivity.kt:448: Warning: String literal in setText can not be translated. Use Android resources instead. [SetTextI18n]
+            val mobile = Switch(this).apply { this.text = "Allow PC background sync on mobile data"; setTextColor(Color.WHITE); isChecked = PcRoute.metered(this@MainActivity) }
+                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "SetTextI18n":
+   When calling TextView#setText
+   * Never call Number#toString() to format numbers; it will not handle
+   fraction separators and locale-specific digits properly. Consider using
+   String#format with proper format specifications (%d or %f) instead.
+   * Do not pass a string literal (e.g. "Hello") to display text. Hardcoded
+   text can not be properly translated to other languages. Consider using
+   Android resource strings instead.
+   * Do not build messages by concatenating text chunks. Such messages can not
+   be properly translated.
+
+   https://developer.android.com/guide/topics/resources/localization.html
+
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/res/layout/widget_quick.xml:6: Warning: Hardcoded string "◈ OneSpace", should use @string resource [HardcodedText]
+        android:text="◈ OneSpace" android:textStyle="bold" android:textSize="18sp" android:textColor="#FFFFFF" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/OneSpace-Pi-Hub-Preview/android/app/src/main/res/layout/widget_quick.xml:8: Warning: Hardcoded string "Tap to share · Tasks · Inbox", should use @string resource [HardcodedText]
+        android:text="Tap to share · Tasks · Inbox" android:textSize="12sp" android:paddingTop="4dp" android:textColor="#B1C5E4" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "HardcodedText":
+   Hardcoding text attributes directly in layout files is bad for several
+   reasons:
+
+   * When creating configuration variations (for example for landscape or
+   portrait) you have to repeat the actual text (and keep it up to date when
+   making changes)
+
+   * The application cannot be translated to other languages by just adding
+   new translations for existing string resources.
+
+   There are quickfixes to automatically extract this hardcoded string into a
+   resource lookup.
+
+0 errors, 22 warnings

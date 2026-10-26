@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; media-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'"><style>html,body{margin:0;background:#0a1020;color:#bcd7e7;font:16px system-ui;height:100%}video{width:100%;height:85%;object-fit:contain}p{padding:12px}button{background:#073d51;color:#aef4ff;border:1px solid #19bddd;border-radius:12px;padding:12px}</style></head><body><video id="video" autoplay playsinline muted></video><p>Live Pi camera. No video is recorded by OneSpace.<br><button onclick="reconnect()">Reconnect</button></p><script>
+'use strict';let peer;let stopped=false;let sequence=0;
+async function startVideo(){
+ const attempt=++sequence;
+ try{
+  if(!window.RTCPeerConnection)throw Error('WebRTC unavailable');
+  const current=new RTCPeerConnection({iceServers:[],bundlePolicy:'max-bundle'});
+  peer=current;
+  current.addTransceiver('video',{direction:'recvonly'});
+  current.ontrack=event=>{if(attempt===sequence&&!stopped)document.getElementById('video').srcObject=event.streams[0]||new MediaStream([event.track]);};
+  current.onconnectionstatechange=()=>{if(attempt===sequence&&!stopped)HubNative.state(current.connectionState);};
+  await current.setLocalDescription(await current.createOffer());
+  if(attempt!==sequence||stopped){current.close();return;}
+  if(current.iceGatheringState!=='complete')await new Promise(resolve=>{let timer=setTimeout(resolve,6000);current.onicegatheringstatechange=()=>{if(current.iceGatheringState==='complete'){clearTimeout(timer);resolve();}};});
+  if(attempt===sequence&&!stopped)HubNative.offer(current.localDescription.sdp,attempt);
+ }catch(error){if(attempt===sequence&&!stopped)HubNative.state('failed');}
+}
+function reconnect(){stopVideo();stopped=false;startVideo();}
+async function acceptAnswer(sdp,attempt){const current=peer;if(attempt===sequence&&!stopped&&current)try{await current.setRemoteDescription({type:'answer',sdp});}catch(error){HubNative.state('failed');}}
+function stopVideo(){stopped=true;sequence++;if(peer){peer.close();peer=null;}document.getElementById('video').srcObject=null;}
+window.addEventListener('pagehide',stopVideo);startVideo();
+</script></body></html>

@@ -1,0 +1,3 @@
+Passed on final sources: hub go vet; desktop go vet; node --check bundled dashboard JS; no duplicate dashboard IDs; sh -n installer, camera publisher and recording buffer setup.
+Windows x64 GUI cross-build passed; Linux ARM64 and amd64 hub cross-builds passed with CGO_ENABLED=0.
+Deployment scripts were not executed on the Pi or host system.

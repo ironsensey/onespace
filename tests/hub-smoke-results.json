@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "checks": [
+    "local enrollment stores token hashes and stable certificate identity",
+    "TLS trust and exact pin reject untrusted identities before sending credentials",
+    "authenticated registry excludes bearer credentials",
+    "clipboard scope is required on both sender and recipient",
+    "event-woken delivery, Unicode, idempotency, ACK ownership and duplicate ACK",
+    "oversized clipboard payload rejected",
+    "camera scope, fixed WHEP routing, session ownership, SDP bound and unsafe upstream responses",
+    "queued event and hub TLS identity survive service restart",
+    "idle media-event expiry is durably purged without recipient ACK",
+    "offline administrative revocation invalidates credentials and queued sender events"
+  ],
+  "limits": "Local CLI/TLS/signaling fixtures only; no physical Pi, Windows clipboard, Android runtime, or video ICE test",
+  "local_enqueue_to_poll_ms": 3.68
+}

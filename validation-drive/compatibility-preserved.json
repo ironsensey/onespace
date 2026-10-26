@@ -1,0 +1,9 @@
+{
+  "windows/cmd/onespace/certs.go": true,
+  "windows/cmd/onespace/updates.go": true,
+  "windows/cmd/onespace/apkmanifest.go": true,
+  "windows/cmd/onespace/state.go": true,
+  "windows/cmd/onespace/hub_secret_windows.go": true,
+  "android/app/src/main/java/com/onespace/companion/SecureStore.kt": true,
+  "android/app/src/main/java/com/onespace/companion/OneSpaceUpdater.kt": true
+}

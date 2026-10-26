@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="15dp" android:gravity="center_vertical" android:background="#1B2940">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="◈ OneSpace" android:textStyle="bold" android:textSize="18sp" android:textColor="#FFFFFF" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Tap to share · Tasks · Inbox" android:textSize="12sp" android:paddingTop="4dp" android:textColor="#B1C5E4" />
+</LinearLayout>

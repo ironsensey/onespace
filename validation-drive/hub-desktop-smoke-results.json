@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "checks": [
+    "desktop local hub settings require process key and redact credential",
+    "desktop proxy authenticates to separately pinned hub registry",
+    "desktop UI send reaches correct enrolled phone queue with sender identity",
+    "desktop background receiver commits receipt and ACKs inbound hub text using Linux clipboard stub"
+  ],
+  "limits": "Linux desktop-engine clipboard stub; transport, persistence and ACK only, not physical paste or phone behavior"
+}

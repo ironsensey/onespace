@@ -1,0 +1,34 @@
+[Unit]
+Description=OneSpace lightweight Pi hub (live camera and opt-in Drive recording)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=onespace-hub
+Group=onespace-hub
+WorkingDirectory=/var/lib/onespace-hub
+Environment=ONESPACE_LISTEN=127.0.0.1:47603
+Environment=ONESPACE_CAMERA_UPSTREAM=http://127.0.0.1:8889/camera/whep
+Environment=ONESPACE_RECORDING_API=http://127.0.0.1:9997
+EnvironmentFile=-/etc/onespace-hub/hub.env
+ExecStart=/opt/onespace-hub/bin/onespace-hub serve --data /var/lib/onespace-hub --listen ${ONESPACE_LISTEN} --camera-upstream ${ONESPACE_CAMERA_UPSTREAM} --recording-api ${ONESPACE_RECORDING_API}
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/onespace-hub
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryHigh=96M
+MemoryMax=160M
+TasksMax=64
+LimitNOFILE=512
+
+[Install]
+WantedBy=multi-user.target

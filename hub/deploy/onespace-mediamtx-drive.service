@@ -1,0 +1,32 @@
+[Unit]
+Description=OneSpace MediaMTX transport with opt-in Drive recording
+After=network-online.target onespace-hub.service
+BindsTo=onespace-hub.service
+RequiresMountsFor=/var/lib/onespace-hub/drive/spool
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=onespace-hub
+Group=onespace-hub
+WorkingDirectory=/var/lib/onespace-hub
+ExecStart=/opt/onespace-hub/bin/mediamtx /etc/onespace-hub/mediamtx.yml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/onespace-hub/drive/spool
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryHigh=128M
+MemoryMax=192M
+TasksMax=64
+LimitNOFILE=512
+
+[Install]
+WantedBy=multi-user.target

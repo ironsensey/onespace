@@ -1,0 +1,7 @@
+goos: linux
+goarch: amd64
+pkg: onespace.local/hub/cloud
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkUploadChunk-5   	       3	   3836829 ns/op	 273.29 MB/s	 2504821 B/op	    1717 allocs/op
+PASS
+ok  	onespace.local/hub/cloud	0.025s

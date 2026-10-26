@@ -1,0 +1,56 @@
+# Based on upstream MediaMTX v1.21.2 configuration names. This is a separate
+# example, NOT a patch to apply blindly to your existing mediamtx.yml.
+# Optional Drive recording. Start disabled; OneSpace controls it over local API.
+# OneSpace exposes authenticated TLS WHEP signaling;
+# RTSP publishing and MediaMTX HTTP signaling are accessible only locally.
+logLevel: info
+logDestinations: [stdout]
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass:
+    ips: [127.0.0.1, '::1']
+    permissions:
+      - action: api
+      - action: publish
+        path: camera
+      - action: read
+        path: camera
+api: true
+apiAddress: 127.0.0.1:9997
+apiEncryption: false
+apiAllowOrigins: []
+metrics: false
+pprof: false
+playback: false
+rtsp: true
+rtspAddress: 127.0.0.1:8554
+rtspTransports: [tcp]
+rtmp: false
+hls: false
+srt: false
+moq: false
+webrtc: true
+webrtcAddress: 127.0.0.1:8889
+webrtcEncryption: false
+webrtcAllowOrigins: []
+# DTLS-SRTP media is encrypted; only clients holding a valid WHEP negotiation
+# can establish the peer connection. Firewall this port to LAN/overlay peers.
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: ''
+webrtcIPsFromInterfaces: true
+webrtcAdditionalHosts: []
+webrtcICEServers2: []
+pathDefaults:
+  record: false
+paths:
+  camera:
+    source: publisher
+    record: false
+    recordPath: /var/lib/onespace-hub/drive/spool/%path/t7_%Y-%m-%d_%H-%M-%S-%f
+    recordFormat: fmp4
+    recordPartDuration: 1s
+    recordMaxPartSize: 8M
+    recordSegmentDuration: 15s
+    recordDeleteAfter: 0s
+    runOnRecordSegmentComplete: /opt/onespace-hub/bin/onespace-hub recording-complete --spool /var/lib/onespace-hub/drive/spool/camera

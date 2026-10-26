@@ -1,0 +1,91 @@
+{"Time":"2026-10-26T04:27:09.570162301Z","Action":"start","Package":"onespace.local/hub"}
+{"Time":"2026-10-26T04:27:09.5705359Z","Action":"start","Package":"onespace.local/hub/camera"}
+{"Time":"2026-10-26T04:27:09.570558183Z","Action":"start","Package":"onespace.local/hub/cmd/onespace-hub"}
+{"Time":"2026-10-26T04:27:09.570614398Z","Action":"output","Package":"onespace.local/hub/cmd/onespace-hub","Output":"?   \tonespace.local/hub/cmd/onespace-hub\t[no test files]\n"}
+{"Time":"2026-10-26T04:27:09.570638775Z","Action":"skip","Package":"onespace.local/hub/cmd/onespace-hub","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.579870142Z","Action":"run","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure"}
+{"Time":"2026-10-26T04:27:09.579938535Z","Action":"output","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Output":"=== RUN   TestAuthAndNoCredentialDisclosure\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.586239961Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership"}
+{"Time":"2026-10-26T04:27:09.58628544Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Output":"=== RUN   TestGatewayAuthorizationAndOwnership\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.590608912Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Output":"--- PASS: TestGatewayAuthorizationAndOwnership (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.59062729Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.590635733Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers"}
+{"Time":"2026-10-26T04:27:09.590639909Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Output":"=== RUN   TestGatewayRejectsLargeSDPAndCapsViewers\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.592810003Z","Action":"output","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Output":"--- PASS: TestAuthAndNoCredentialDisclosure (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.592824645Z","Action":"pass","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.592837134Z","Action":"run","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency"}
+{"Time":"2026-10-26T04:27:09.592840559Z","Action":"output","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Output":"=== RUN   TestDurableDeliveryScopedAckAndIdempotency\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.599585655Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Output":"--- PASS: TestGatewayRejectsLargeSDPAndCapsViewers (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.599605505Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.599617643Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation"}
+{"Time":"2026-10-26T04:27:09.599619827Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.599921852Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect"}
+{"Time":"2026-10-26T04:27:09.599927531Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation/redirect\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.605083289Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation/redirect (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.605140746Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.605146565Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location"}
+{"Time":"2026-10-26T04:27:09.605149038Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation/location\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.608159069Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation/location (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.60819954Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.60832504Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.608334865Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.608456508Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers"}
+{"Time":"2026-10-26T04:27:09.608462757Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Output":"=== RUN   TestGatewayReaperClosesRevokedAndExpiredViewers\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.609050003Z","Action":"output","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Output":"--- PASS: TestDurableDeliveryScopedAckAndIdempotency (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.609064265Z","Action":"pass","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Elapsed":0.02}
+{"Time":"2026-10-26T04:27:09.609088722Z","Action":"run","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt"}
+{"Time":"2026-10-26T04:27:09.609114361Z","Action":"output","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Output":"=== RUN   TestLongPollWakesAndRevocationCancelsIt\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.614053953Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Output":"--- PASS: TestGatewayReaperClosesRevokedAndExpiredViewers (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.61407207Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.614084008Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream"}
+{"Time":"2026-10-26T04:27:09.614088815Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Output":"=== RUN   TestGatewayOnlyAcceptsLoopbackUpstream\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.614111209Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Output":"--- PASS: TestGatewayOnlyAcceptsLoopbackUpstream (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.614113913Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.614115996Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames"}
+{"Time":"2026-10-26T04:27:09.614122867Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Output":"=== RUN   TestGatewayStatusDoesNotPretendToMeasureFrames\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.615834889Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Output":"--- PASS: TestGatewayStatusDoesNotPretendToMeasureFrames (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.615890834Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.616011516Z","Action":"output","Package":"onespace.local/hub/camera","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.6296227Z","Action":"output","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Output":"--- PASS: TestLongPollWakesAndRevocationCancelsIt (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.629643742Z","Action":"pass","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Elapsed":0.02}
+{"Time":"2026-10-26T04:27:09.629650592Z","Action":"run","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk"}
+{"Time":"2026-10-26T04:27:09.629653497Z","Action":"output","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Output":"=== RUN   TestExpiryPurgesPlaintextFromDisk\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.638709208Z","Action":"output","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Output":"--- PASS: TestExpiryPurgesPlaintextFromDisk (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.638820817Z","Action":"pass","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.638826245Z","Action":"run","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish"}
+{"Time":"2026-10-26T04:27:09.638828639Z","Action":"output","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Output":"=== RUN   TestFailedPersistenceDoesNotAcknowledgeOrPublish\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.64885168Z","Action":"output","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Output":"--- PASS: TestFailedPersistenceDoesNotAcknowledgeOrPublish (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.648868435Z","Action":"pass","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.648874214Z","Action":"run","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation"}
+{"Time":"2026-10-26T04:27:09.648876928Z","Action":"output","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Output":"=== RUN   TestResourceLimitsAndStrictRequestValidation\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.670461772Z","Action":"output","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Output":"--- PASS: TestResourceLimitsAndStrictRequestValidation (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.670492228Z","Action":"pass","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Elapsed":0.02}
+{"Time":"2026-10-26T04:27:09.670501552Z","Action":"run","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity"}
+{"Time":"2026-10-26T04:27:09.670503965Z","Action":"output","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Output":"=== RUN   TestLockAndRestartPreserveCredentialsAndIdentity\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.672708832Z","Action":"output","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Output":"--- PASS: TestLockAndRestartPreserveCredentialsAndIdentity (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.672768672Z","Action":"pass","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.672777145Z","Action":"run","Package":"onespace.local/hub","Test":"TestTLSRequired"}
+{"Time":"2026-10-26T04:27:09.672779869Z","Action":"output","Package":"onespace.local/hub","Test":"TestTLSRequired","Output":"=== RUN   TestTLSRequired\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.674264729Z","Action":"output","Package":"onespace.local/hub","Test":"TestTLSRequired","Output":"--- PASS: TestTLSRequired (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.674274063Z","Action":"pass","Package":"onespace.local/hub","Test":"TestTLSRequired","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.67427873Z","Action":"run","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet"}
+{"Time":"2026-10-26T04:27:09.674281745Z","Action":"output","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Output":"=== RUN   TestTrustedSourcesIncludeOverlayButNotPublicInternet\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.674353222Z","Action":"output","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Output":"--- PASS: TestTrustedSourcesIncludeOverlayButNotPublicInternet (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.674374975Z","Action":"pass","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.674378621Z","Action":"run","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest"}
+{"Time":"2026-10-26T04:27:09.674381655Z","Action":"output","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Output":"=== RUN   TestCoalescedClipboardOldAckDoesNotDelayLatest\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.6841809Z","Action":"output","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Output":"--- PASS: TestCoalescedClipboardOldAckDoesNotDelayLatest (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.684200529Z","Action":"pass","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Elapsed":0.01}
+{"Time":"2026-10-26T04:27:09.684205607Z","Action":"run","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence"}
+{"Time":"2026-10-26T04:27:09.684208351Z","Action":"output","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Output":"=== RUN   TestCameraRechecksDoNotInventPresence\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.685300629Z","Action":"output","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Output":"--- PASS: TestCameraRechecksDoNotInventPresence (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.685311295Z","Action":"pass","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Elapsed":0}
+{"Time":"2026-10-26T04:27:09.685313959Z","Action":"run","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable"}
+{"Time":"2026-10-26T04:27:09.685315812Z","Action":"output","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Output":"=== RUN   TestEscapedClipboardBatchIsBoundedAndDeliverable\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.87857864Z","Action":"output","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Output":"--- PASS: TestEscapedClipboardBatchIsBoundedAndDeliverable (0.19s)\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:09.878621454Z","Action":"pass","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Elapsed":0.19}
+{"Time":"2026-10-26T04:27:09.878629547Z","Action":"output","Package":"onespace.local/hub","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-26T04:27:10.618270402Z","Action":"output","Package":"onespace.local/hub/camera","Output":"ok  \tonespace.local/hub/camera\t1.047s\n"}
+{"Time":"2026-10-26T04:27:10.618325405Z","Action":"pass","Package":"onespace.local/hub/camera","Elapsed":1.048}
+{"Time":"2026-10-26T04:27:10.881893855Z","Action":"output","Package":"onespace.local/hub","Output":"ok  \tonespace.local/hub\t1.311s\n"}
+{"Time":"2026-10-26T04:27:10.881938182Z","Action":"pass","Package":"onespace.local/hub","Elapsed":1.312}

@@ -1,0 +1,34 @@
+[Unit]
+Description=OneSpace existing OV5647 hardware H264 publisher
+After=onespace-mediamtx.service
+Requires=onespace-mediamtx.service
+StartLimitIntervalSec=180
+StartLimitBurst=6
+
+[Service]
+Type=simple
+User=onespace-camera
+Group=onespace-camera
+SupplementaryGroups=video render
+WorkingDirectory=/var/lib/onespace-camera
+ExecStart=/opt/onespace-hub/bin/camera-publisher.sh
+Restart=on-failure
+RestartSec=10
+KillSignal=SIGINT
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=yes
+# Do not use PrivateDevices: libcamera needs real /dev/video*, /dev/media*
+# and platform-specific camera/ISP device access.
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/onespace-camera
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+MemoryHigh=192M
+MemoryMax=320M
+TasksMax=96
+LimitNOFILE=512
+
+[Install]
+WantedBy=multi-user.target
