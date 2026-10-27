@@ -1,3 +1,5 @@
+> Development branch: see [DEVELOPMENT.md](DEVELOPMENT.md). The native UI and route-selection changes are incomplete; bundled v0.8.0 binaries do not include them.
+
 # OneSpace v0.8.0 · Google Drive Recording Preview
 
 **Start with [DRIVE-SETUP.md](DRIVE-SETUP.md).** This source and binary package

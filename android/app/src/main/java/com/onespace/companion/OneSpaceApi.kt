@@ -80,6 +80,27 @@ class OneSpaceApi(host: String, fingerprint: String, var token: String = "",
             return action()
         }
     }
+    /** Short, pinned preflight. Never reads or replays clipboard/file content. */
+    fun verifyRoute(timeoutMs: Int = 800): Boolean {
+        val c = connect("/v1/info")
+        try {
+            c.connectTimeout = timeoutMs
+            c.readTimeout = timeoutMs
+            if (c.responseCode != 200) return false
+            val body = c.inputStream.use { input ->
+                val bytes = ByteArray(16385)
+                var size = 0
+                while (size < bytes.size) {
+                    val count = input.read(bytes, size, bytes.size - size)
+                    if (count < 0) break
+                    size += count
+                }
+                require(size <= 16384) { "Oversized PC identity response" }
+                String(bytes, 0, size, Charsets.UTF_8)
+            }
+            return JSONObject(body).optString("app") == "OneSpace"
+        } finally { activeConnections.remove(c); c.disconnect() }
+    }
     fun request(path: String, method: String = "GET", obj: JSONObject? = null): JSONObject =
         withRecovery(method) { requestOnce(path,method,obj) }
     private fun requestOnce(path: String, method: String, obj: JSONObject?): JSONObject {

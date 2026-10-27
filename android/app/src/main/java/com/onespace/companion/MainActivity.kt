@@ -439,7 +439,7 @@ class MainActivity : Activity() {
                     info("PC identity verified with existing certificate; enable overlay route below")
                 }
             })
-            val route = Switch(this).apply { this.text = "Use verified private overlay PC route"; setTextColor(Color.WHITE); isChecked = PcRoute.enabled(this@MainActivity) }
+            val route = Switch(this).apply { this.text = "Enable verified remote PC fallback (LAN preferred)"; setTextColor(Color.WHITE); isChecked = PcRoute.enabled(this@MainActivity) }
             route.setOnCheckedChangeListener { _, enabled ->
                 try { PcRoute.setEnabled(this, enabled); refreshBackgroundService() }
                 catch (_: Exception) { route.isChecked = false; info("Verify an overlay PC address first") }

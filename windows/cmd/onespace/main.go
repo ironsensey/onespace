@@ -68,6 +68,7 @@ func openBrowser(url string) {
 }
 func main() {
 	root := flag.String("data", "", "Data directory (default user configuration directory)")
+	nativeUI := flag.Bool("native-ui", false, "Open the native Windows dashboard preview")
 	noBrowser := flag.Bool("no-browser", false, "Do not open dashboard automatically")
 	flag.Parse()
 	if *root == "" {
@@ -142,7 +143,13 @@ func main() {
 	fmt.Println("Dashboard: http://127.0.0.1:47600")
 	fmt.Println("LAN endpoint: port 47601 (encrypted)")
 	fmt.Println("Fingerprint SHA-256: " + fingerprint)
-	if !*noBrowser {
+	if *nativeUI {
+		go func() {
+			if err := openNativeDashboard(app); err != nil {
+				log.Printf("Native dashboard: %v", err)
+			}
+		}()
+	} else if !*noBrowser {
 		openBrowser("http://127.0.0.1:47600")
 	}
 	ch := make(chan os.Signal, 1)
