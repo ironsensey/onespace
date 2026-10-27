@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/subtle"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,7 +23,7 @@ import (
 )
 
 const maxUpload int64 = 512 << 20
-const appVersion = "0.8.0-preview"
+const appVersion = "0.9.0-preview"
 
 type powerRequest struct {
 	Action  string
@@ -30,17 +31,18 @@ type powerRequest struct {
 }
 
 type App struct {
-	hub          *HubBridge
-	s            *State
-	fingerprint  string
-	attempts     sync.Mutex
-	failed       map[string][]time.Time
-	powerMu      sync.Mutex
-	powers       map[string]powerRequest
-	clipMu       sync.Mutex
-	clipSeq      uint32
-	clipFailures int
-	clipReady    bool
+	pcCertificate tls.Certificate
+	hub           *HubBridge
+	s             *State
+	fingerprint   string
+	attempts      sync.Mutex
+	failed        map[string][]time.Time
+	powerMu       sync.Mutex
+	powers        map[string]powerRequest
+	clipMu        sync.Mutex
+	clipSeq       uint32
+	clipFailures  int
+	clipReady     bool
 	// Closed and replaced after each outbox change. Waiters sleep without polling.
 	outboxWake chan struct{}
 }
@@ -256,7 +258,7 @@ func (a *App) local(w http.ResponseWriter, r *http.Request) {
 		autoClipboard := a.s.Data.AutoClipboard
 		set := a.s.Data.PassHash != ""
 		a.s.Unlock()
-		jsonReply(w, 200, map[string]any{"devices": devices, "items": items, "tasks": tasks, "notes": notes, "events": events, "pending": pending, "outbox": outbound, "fingerprint": a.fingerprint, "configured": set, "ips": lanAddresses(), "remote_power": remotePower, "auto_clipboard": autoClipboard, "data_path": a.s.root, "start_on_login": startupEnabled()})
+		jsonReply(w, 200, map[string]any{"version": appVersion, "devices": devices, "items": items, "tasks": tasks, "notes": notes, "events": events, "pending": pending, "outbox": outbound, "fingerprint": a.fingerprint, "configured": set, "ips": lanAddresses(), "remote_power": remotePower, "auto_clipboard": autoClipboard, "data_path": a.s.root, "start_on_login": startupEnabled()})
 		return
 	case "/local/password":
 		if r.Method != "POST" {

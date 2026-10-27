@@ -1,178 +1,138 @@
 package com.onespace.companion
 
-import android.net.Uri
 import android.content.ContentResolver
-import org.json.JSONArray
-import org.json.JSONObject
+import android.net.Uri
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
-import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import javax.net.ssl.HttpsURLConnection
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import org.json.JSONArray
+import org.json.JSONObject
+import okio.BufferedSink
 
-/** Certificate fingerprint must first be copied from the physical PC's dashboard. Never trust TOFU. */
+/** The same PC certificate and bearer token are required on LAN and inside a Pi relay. */
 class OneSpaceApi(host: String, fingerprint: String, var token: String = "",
-                  private val recoverHost: (() -> String?)? = null) {
-    @Volatile private var currentHost: String = host
-    private val activeConnections = java.util.concurrent.ConcurrentHashMap.newKeySet<HttpsURLConnection>()
+                  private val tunnel: HubTunnelConfig? = null,
+                  private val onNetworkFailure: (() -> Unit)? = null,
+                  private val recoverHost: (() -> String?)? = null) : UpdateSource {
+    @Volatile private var currentHost = host
     @Volatile private var cancelled = false
-    fun cancel() { cancelled = true; activeConnections.forEach { it.disconnect() } }
-    private val pin = fingerprint.lowercase().replace(Regex("[^0-9a-f]"), "")
-    init { require(pin.length == 64) { "Expected 64-character SHA-256 fingerprint" }; require(host.matches(Regex("[a-zA-Z0-9.:-]+"))) { "Invalid host address" } }
+    private val active = ConcurrentHashMap.newKeySet<Call>()
+    private val pin = HubPolicy.normalizedPin(fingerprint)
+    init { require(host.matches(Regex("[a-zA-Z0-9.:-]+"))) { "Invalid host address" } }
     companion object {
-        // Reusing the same pinned TLS context lets the OS resume trusted sessions.
-        // Previously each clipboard/photo request built a fresh TLS context, forcing
-        // extra certificate handshakes and wasting battery.
-        private val tlsContexts = java.util.concurrent.ConcurrentHashMap<String, SSLContext>()
-        private fun pinnedContext(pin: String): SSLContext = tlsContexts.computeIfAbsent(pin) { fingerprint ->
-        val trust = object : X509TrustManager {
-            override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = Unit
-            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
-                if (chain.isEmpty()) throw java.security.cert.CertificateException("No certificate")
-                val expected = fingerprint.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-                val actual = MessageDigest.getInstance("SHA-256").digest(chain[0].encoded)
-                if (!MessageDigest.isEqual(expected, actual)) throw java.security.cert.CertificateException("PC identity mismatch. Do NOT continue.")
-                chain[0].checkValidity()
+        private val clients = LinkedHashMap<String, OkHttpClient>()
+        @Synchronized private fun client(pin: String, tunnel: HubTunnelConfig?): OkHttpClient {
+            val key = pin + ":" + (tunnel?.let { MessageDigest.getInstance("SHA-256").digest(it.toString().toByteArray()).joinToString("") { b -> "%02x".format(b) } } ?: "direct")
+            clients[key]?.let { return it }
+            val trust = object : X509TrustManager {
+                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+                override fun checkClientTrusted(c: Array<X509Certificate>, a: String) = throw java.security.cert.CertificateException("Client trust unsupported")
+                override fun checkServerTrusted(c: Array<X509Certificate>, a: String) {
+                    if (c.isEmpty()) throw java.security.cert.CertificateException("No PC certificate")
+                    c[0].checkValidity()
+                    val expected = pin.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                    if (!MessageDigest.isEqual(expected, MessageDigest.getInstance("SHA-256").digest(c[0].encoded)))
+                        throw java.security.cert.CertificateException("PC identity mismatch. Do NOT continue.")
+                }
             }
-        }
-        val ctx = SSLContext.getInstance("TLS")
-        ctx.init(null, arrayOf<TrustManager>(trust), SecureRandom())
-        ctx
+            val context = SSLContext.getInstance("TLS").apply { init(null, arrayOf<TrustManager>(trust), SecureRandom()) }
+            val builder = OkHttpClient.Builder().sslSocketFactory(context.socketFactory, trust)
+                .hostnameVerifier { _, _ -> true }.proxy(java.net.Proxy.NO_PROXY)
+                .connectTimeout(4, TimeUnit.SECONDS).readTimeout(65, TimeUnit.SECONDS).writeTimeout(65, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false).followRedirects(false).followSslRedirects(false)
+            tunnel?.let {
+                builder.socketFactory(HubTunnelSocketFactory(it))
+                // The logical PC host is an identity label, not the relay's TCP destination.
+                builder.dns(object : Dns { override fun lookup(hostname: String) = listOf(java.net.InetAddress.getLoopbackAddress()) })
+                builder.protocols(listOf(Protocol.HTTP_1_1))
+            }
+            val result = builder.build()
+            if (clients.size >= 8) { clients.values.forEach { it.connectionPool.evictAll() }; clients.clear() }
+            clients[key] = result
+            return result
         }
     }
-    private fun connect(path: String, method: String = "GET"): HttpsURLConnection {
-        if (cancelled) throw IOException("Connection cancelled")
-        val ctx = pinnedContext(pin)
-        val url = URL("https://$currentHost:47601$path")
-        val c = (url.openConnection() as HttpsURLConnection)
-        c.sslSocketFactory = ctx.socketFactory
-        // Pinning the exact cert, rather than a DNS name, establishes the host identity.
-        c.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
-        c.requestMethod = method
-        c.connectTimeout = 4000
-        c.readTimeout = 65000
-        c.useCaches = false
-        c.setRequestProperty("Accept", "application/json")
-        if (token.isNotEmpty()) c.setRequestProperty("Authorization", "Bearer $token")
-        activeConnections.add(c)
-        if (cancelled) { activeConnections.remove(c); c.disconnect(); throw IOException("Connection cancelled") }
-        return c
-    }
-    private fun networkRetryable(error: java.io.IOException): Boolean =
-        error is java.net.ConnectException || error is java.net.NoRouteToHostException ||
-        error is java.net.SocketTimeoutException || error is java.net.UnknownHostException
-
-    /** Retry failed reads once only after discovering and cert-verifying a new IP.
-     * POST operations are intentionally not replayed: they might have succeeded
-     * before the connection broke. */
+    fun cancel() { cancelled = true; active.forEach { it.cancel() } }
+    private class HttpFailure(message: String) : IOException(message)
     private fun <T> withRecovery(method: String, action: () -> T): T {
-        try { return action() } catch (error: java.io.IOException) {
-            if (method != "GET" || !networkRetryable(error)) throw error
+        try { return action() } catch (e: IOException) {
+            // Never replay writes after an uncertain outcome, or change endpoint trust.
+            if (method != "GET" || tunnel != null || (e is HttpFailure || e is javax.net.ssl.SSLException || cancelled)) throw e
             val next = recoverHost?.invoke()
-            if (next.isNullOrBlank() || next == currentHost) throw error
+            if (next.isNullOrBlank() || next == currentHost) throw e
             currentHost = next
             return action()
         }
     }
-    /** Short, pinned preflight. Never reads or replays clipboard/file content. */
-    fun verifyRoute(timeoutMs: Int = 800): Boolean {
-        val c = connect("/v1/info")
+    private fun <T> exchange(path: String, method: String = "GET", body: RequestBody? = null, timeoutMs: Int? = null, receive: (Response) -> T): T {
+        require(path.startsWith("/v1/") && !path.contains('\r') && !path.contains('\n'))
+        if (cancelled) throw IOException("Connection cancelled")
+        val base = client(pin, tunnel)
+        val http = if (timeoutMs == null) base else base.newBuilder().connectTimeout(timeoutMs.toLong(), TimeUnit.MILLISECONDS).readTimeout(timeoutMs.toLong(), TimeUnit.MILLISECONDS).callTimeout(timeoutMs.toLong() * 2, TimeUnit.MILLISECONDS).build()
+        val request = Request.Builder().url("https://$currentHost:47601$path").header("Accept", "application/json")
+            .method(method, body ?: if(method in listOf("POST", "PUT", "PATCH")) ByteArray(0).toRequestBody() else null)
+        if (token.isNotEmpty()) request.header("Authorization", "Bearer $token")
+        val call = http.newCall(request.build())
+        active.add(call)
         try {
-            c.connectTimeout = timeoutMs
-            c.readTimeout = timeoutMs
-            if (c.responseCode != 200) return false
-            val body = c.inputStream.use { input ->
-                val bytes = ByteArray(16385)
-                var size = 0
-                while (size < bytes.size) {
-                    val count = input.read(bytes, size, bytes.size - size)
-                    if (count < 0) break
-                    size += count
+            if (cancelled) throw IOException("Connection cancelled")
+            return call.execute().use { response ->
+                if (!response.isSuccessful) {
+                    val message = try { JSONObject(boundedBody(response)).optString("error", "HTTP ${response.code}") } catch (_: Exception) { "HTTP ${response.code}" }
+                    throw HttpFailure(message.take(240))
                 }
-                require(size <= 16384) { "Oversized PC identity response" }
-                String(bytes, 0, size, Charsets.UTF_8)
+                receive(response)
             }
-            return JSONObject(body).optString("app") == "OneSpace"
-        } finally { activeConnections.remove(c); c.disconnect() }
+        } catch (e: IOException) {
+            if (e !is HttpFailure && e !is javax.net.ssl.SSLException && !cancelled) onNetworkFailure?.invoke()
+            throw e
+        } finally { active.remove(call) }
     }
-    fun request(path: String, method: String = "GET", obj: JSONObject? = null): JSONObject =
-        withRecovery(method) { requestOnce(path,method,obj) }
-    private fun requestOnce(path: String, method: String, obj: JSONObject?): JSONObject {
-        val c = connect(path, method)
-        var complete = false
-        try {
-            if (obj != null) {
-                c.doOutput = true
-                c.setRequestProperty("Content-Type", "application/json")
-                c.outputStream.use { it.write(obj.toString().toByteArray(Charsets.UTF_8)) }
-            }
-            val status = c.responseCode
-            val response = (if (status in 200..299) c.inputStream else c.errorStream)
-                ?.bufferedReader()?.use { it.readText() } ?: "{}"
-            val answer = JSONObject(response)
-            if (status !in 200..299) throw IOException(answer.optString("error", "HTTP $status"))
-            complete = true
-            return answer
-        } finally { activeConnections.remove(c); if (!complete || cancelled) c.disconnect() }
+    private fun boundedBody(response: Response, limit: Long = 1048576): String {
+        val source = response.body?.source() ?: return ""
+        source.request(limit + 1)
+        if (source.buffer.size > limit) throw IOException("PC response too large")
+        return source.readUtf8()
     }
-    fun list(path: String): JSONArray = withRecovery("GET") { listOnce(path) }
-    private fun listOnce(path: String): JSONArray {
-        val c = connect(path)
-        var complete = false
-        try {
-            val status = c.responseCode
-            val body = (if(status in 200..299)c.inputStream else c.errorStream)
-                ?.bufferedReader()?.use {it.readText()} ?: "[]"
-            if (status !in 200..299) throw IOException(JSONObject(body).optString("error", "HTTP $status"))
-            val result = JSONArray(body)
-            complete = true
-            return result
-        } finally { activeConnections.remove(c); if (!complete || cancelled) c.disconnect() }
+    fun verifyRoute(timeoutMs: Int = 800) = exchange("/v1/info", timeoutMs = timeoutMs) { JSONObject(boundedBody(it, 16384)).optString("app") == "OneSpace" }
+    override fun request(path: String, method: String, obj: JSONObject?): JSONObject = withRecovery(method) {
+        exchange(path, method, obj?.toString()?.toRequestBody("application/json".toMediaType())) { JSONObject(boundedBody(it).ifBlank { "{}" }) }
     }
+    fun list(path: String): JSONArray = withRecovery("GET") { exchange(path) { JSONArray(boundedBody(it)) } }
     fun upload(resolver: ContentResolver, uri: Uri, name: String, permanent: Boolean, toClipboard: Boolean): JSONObject {
-        val bucket = if (permanent) "Permanent" else "Temporary"
-        val query = "?name=" + URLEncoder.encode(name, "UTF-8") + "&bucket=$bucket&clipboard=" + if (toClipboard) "1" else "0"
-        val c = connect("/v1/items/file$query", "POST")
-        var complete = false
-        try {
-            c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/octet-stream")
-            c.setChunkedStreamingMode(65536)
-            resolver.openInputStream(uri)?.use { input -> c.outputStream.use { output -> input.copyTo(output, 65536) } }
-                ?: throw IOException("Cannot read selected file")
-            val code = c.responseCode
-            val response = (if(code in 200..299)c.inputStream else c.errorStream)
-                ?.bufferedReader()?.use { it.readText() } ?: "{}"
-            val answer = JSONObject(response)
-            if(code !in 200..299)throw IOException(answer.optString("error","HTTP $code"))
-            complete = true
-            return answer
-        } finally { activeConnections.remove(c); if (!complete || cancelled) c.disconnect() }
+        val query = "?name=" + URLEncoder.encode(name, "UTF-8") + "&bucket=" + (if(permanent) "Permanent" else "Temporary") + "&clipboard=" + (if(toClipboard) "1" else "0")
+        val body = object : RequestBody() {
+            override fun contentType() = "application/octet-stream".toMediaType()
+            override fun isOneShot() = true
+            override fun writeTo(sink: BufferedSink) {
+                resolver.openInputStream(uri)?.use { input ->
+                    val bytes = ByteArray(65536)
+                    var total = 0L
+                    while (true) {
+                        val n = input.read(bytes)
+                        if (n < 0) break
+                        total += n
+                        if (total > 512L * 1024 * 1024) throw IOException("File exceeds PC transfer limit")
+                        sink.write(bytes, 0, n)
+                    }
+                } ?: throw IOException("Cannot read selected file")
+            }
+        }
+        return exchange("/v1/items/file$query", "POST", body) { JSONObject(boundedBody(it)) }
     }
-    /** Streams a release over the existing certificate-pinned, token-authenticated HTTPS connection. */
-    fun downloadUpdate(receiver: (java.io.InputStream) -> Unit) {
-        val c = connect("/v1/update/apk")
-        var complete = false
-        try {
-            if (c.responseCode !in 200..299) throw IOException("Update download failed (HTTP ${c.responseCode})")
-            c.inputStream.use(receiver)
-            complete = true
-        } finally { activeConnections.remove(c); if (!complete || cancelled) c.disconnect() }
-    }
+    override fun downloadUpdate(receiver: (java.io.InputStream) -> Unit) = exchange("/v1/update/apk") { it.body?.byteStream()?.let(receiver) ?: throw IOException("Missing update") }
     fun download(id: String, receiver: (java.io.InputStream) -> Unit) {
         require(id.matches(Regex("[a-f0-9]{24}")))
-        val c = connect("/v1/items/$id/content")
-        var complete = false
-        try {
-            if(c.responseCode !in 200..299)throw IOException("Download failed (${c.responseCode})")
-            c.inputStream.use(receiver)
-            complete = true
-        } finally { activeConnections.remove(c); if (!complete || cancelled) c.disconnect() }
+        exchange("/v1/items/$id/content") { it.body?.byteStream()?.let(receiver) ?: throw IOException("Missing file") }
     }
 }

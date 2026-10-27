@@ -1,0 +1,20 @@
+{"Time":"2026-10-27T11:42:25.386868439Z","Action":"start","Package":"onespace.local/hub/updates"}
+{"Time":"2026-10-27T11:42:25.395538376Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries"}
+{"Time":"2026-10-27T11:42:25.395620679Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Output":"=== RUN   TestReadRealisticAPKBinaries\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.397856336Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Output":"--- PASS: TestReadRealisticAPKBinaries (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.397875555Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Elapsed":0}
+{"Time":"2026-10-27T11:42:25.397891298Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart"}
+{"Time":"2026-10-27T11:42:25.397893391Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Output":"=== RUN   TestPublicationAuthorizationMonotonicityAndRestart\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.400055518Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Output":"--- PASS: TestPublicationAuthorizationMonotonicityAndRestart (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.400077811Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Elapsed":0}
+{"Time":"2026-10-27T11:42:25.400082748Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest"}
+{"Time":"2026-10-27T11:42:25.40009067Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Output":"=== RUN   TestUpdateStreamMatchesManifest\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.406868336Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Output":"--- PASS: TestUpdateStreamMatchesManifest (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.406928016Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Elapsed":0.01}
+{"Time":"2026-10-27T11:42:25.406947445Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable"}
+{"Time":"2026-10-27T11:42:25.40695067Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Output":"=== RUN   TestVersionReservationsAreSharedAndDurable\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.409273067Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Output":"--- PASS: TestVersionReservationsAreSharedAndDurable (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:25.409289381Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Elapsed":0}
+{"Time":"2026-10-27T11:42:25.409296241Z","Action":"output","Package":"onespace.local/hub/updates","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-27T11:42:26.411590324Z","Action":"output","Package":"onespace.local/hub/updates","Output":"ok  \tonespace.local/hub/updates\t1.024s\n"}
+{"Time":"2026-10-27T11:42:26.41289951Z","Action":"pass","Package":"onespace.local/hub/updates","Elapsed":1.026}

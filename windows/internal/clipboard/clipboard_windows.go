@@ -37,6 +37,7 @@ var (
 	globalUnlock = kernel32.NewProc("GlobalUnlock")
 	globalFree   = kernel32.NewProc("GlobalFree")
 	globalSize   = kernel32.NewProc("GlobalSize")
+	copyMemory   = kernel32.NewProc("RtlMoveMemory")
 )
 
 func withClipboard(f func() error) error { return withClipboardOwner(0, f) }
@@ -85,7 +86,7 @@ func put(format uintptr, data []byte) error {
 		globalFree.Call(h)
 		return errors.New("GlobalLock failed")
 	}
-	copy(unsafe.Slice((*byte)(unsafe.Pointer(ptr)), len(data)), data)
+	copyMemory.Call(ptr, uintptr(unsafe.Pointer(&data[0])), uintptr(len(data)))
 	globalUnlock.Call(h)
 	if r, _, _ := emptyClip.Call(); r == 0 {
 		globalFree.Call(h)
@@ -124,7 +125,11 @@ func GetText() (string, error) {
 			return errors.New("clipboard text too large")
 		}
 		n := int(sz / 2)
-		u := unsafe.Slice((*uint16)(unsafe.Pointer(ptr)), n)
+		if n == 0 {
+			return nil
+		}
+		u := make([]uint16, n)
+		copyMemory.Call(uintptr(unsafe.Pointer(&u[0])), ptr, uintptr(n*2))
 		end := 0
 		for end < len(u) && u[end] != 0 {
 			end++

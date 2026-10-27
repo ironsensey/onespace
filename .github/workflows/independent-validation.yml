@@ -1,0 +1,43 @@
+name: OneSpace independent build checks
+# Only this development branch is automatic. No schedule or release keys.
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev/onespace-independent-connect]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: windows/go.sum
+      - run: go test -race -p 1 ./...
+        working-directory: windows
+        env:
+          ONESPACE_WINDOWS_CLIPBOARD_TEST: "1"
+      - run: go build -buildvcs=false -trimpath -ldflags "-H=windowsgui" -o ../OneSpace.exe ./cmd/onespace
+        working-directory: windows
+      - shell: powershell
+        run: ./tools/Test-NativeWindows.ps1 -Executable ./OneSpace.exe
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: windows/go.sum
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+      - run: govulncheck ./...
+        working-directory: hub
+      - run: govulncheck ./...
+        working-directory: windows
+        env:
+          GOOS: windows
+          GOARCH: amd64

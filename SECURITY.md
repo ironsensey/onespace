@@ -32,3 +32,15 @@
 - Android downloads in chunks into a temporary file, checks the hash, file size, package name, version code, and archive signing certificates against the installed app before requesting OS installation. Android performs its own independent final package-signature check and requires user approval.
 - The update mechanism supports the current signing identity, but does not yet support APK signing-key rotation. Keep the same `.jks` key for all builds.
 - The current dashboard does not validate APK signature or version metadata itself. Never publish untrusted content. Compromised Windows credentials or a stolen signing key are outside the protections of ordinary TLS transport.
+
+## v0.9.0 development boundary
+
+See docs/PROTOCOL-AND-SECURITY.md for the opt-in built-in relay/public ingress,
+separate update-publisher scope, nested PC TLS and isolated video-component model.
+This preview has not had a penetration test. The Go vulnerability database was
+inaccessible in the cloud workspace, so dependency scanning is not marked passed.
+The branch-limited GitHub Actions security job can run from a permitted network.
+Existing Windows PC pairing tokens retain the original profile format and OS
+user-file protection; the newer hub token uses DPAPI. No blanket claim that all
+old profile secrets are encrypted at rest is made. Preserve private backups and
+use appropriate operating-system account/disk protections.

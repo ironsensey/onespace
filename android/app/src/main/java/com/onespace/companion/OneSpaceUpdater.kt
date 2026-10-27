@@ -22,7 +22,7 @@ class OneSpaceUpdater(private val activity: Activity) {
     private val pm get() = activity.packageManager
     private val myPackage get() = activity.packageName
 
-    fun check(api: OneSpaceApi): Release? {
+    fun check(api: UpdateSource): Release? {
         val data = try {api.request("/v1/update/manifest")} catch (e: IOException) {
             if (e.message?.contains("No Android update has been published yet") == true) return null
             throw e
@@ -40,7 +40,7 @@ class OneSpaceUpdater(private val activity: Activity) {
 
     private fun currentCode(): Long = pm.getPackageInfo(myPackage, 0).longVersionCode
 
-    fun download(api: OneSpaceApi, release: Release) {
+    fun download(api: UpdateSource, release: Release) {
         apkFile.parentFile?.mkdirs()
         val temp = File(apkFile.parentFile, "pending.apk")
         try {

@@ -1,0 +1,188 @@
+{"Time":"2026-10-27T12:01:07.46618231Z","Action":"start","Package":"onespace.local/hub"}
+{"Time":"2026-10-27T12:01:07.467142747Z","Action":"start","Package":"onespace.local/hub/camera"}
+{"Time":"2026-10-27T12:01:07.467190138Z","Action":"start","Package":"onespace.local/hub/cloud"}
+{"Time":"2026-10-27T12:01:07.467360934Z","Action":"start","Package":"onespace.local/hub/cmd/onespace-hub"}
+{"Time":"2026-10-27T12:01:07.467383068Z","Action":"output","Package":"onespace.local/hub/cmd/onespace-hub","Output":"?   \tonespace.local/hub/cmd/onespace-hub\t[no test files]\n"}
+{"Time":"2026-10-27T12:01:07.46740489Z","Action":"skip","Package":"onespace.local/hub/cmd/onespace-hub","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.467421245Z","Action":"start","Package":"onespace.local/hub/updates"}
+{"Time":"2026-10-27T12:01:07.467427845Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries"}
+{"Time":"2026-10-27T12:01:07.46743128Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Output":"=== RUN   TestReadRealisticAPKBinaries\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467440143Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Output":"--- PASS: TestReadRealisticAPKBinaries (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467444179Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestReadRealisticAPKBinaries","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.467448255Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart"}
+{"Time":"2026-10-27T12:01:07.467451Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Output":"=== RUN   TestPublicationAuthorizationMonotonicityAndRestart\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467455957Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Output":"--- PASS: TestPublicationAuthorizationMonotonicityAndRestart (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467460864Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestPublicationAuthorizationMonotonicityAndRestart","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.467465912Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest"}
+{"Time":"2026-10-27T12:01:07.467469187Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Output":"=== RUN   TestUpdateStreamMatchesManifest\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467474194Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Output":"--- PASS: TestUpdateStreamMatchesManifest (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467477219Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestUpdateStreamMatchesManifest","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.4674843Z","Action":"run","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable"}
+{"Time":"2026-10-27T12:01:07.467486903Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Output":"=== RUN   TestVersionReservationsAreSharedAndDurable\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.46749149Z","Action":"output","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Output":"--- PASS: TestVersionReservationsAreSharedAndDurable (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467494254Z","Action":"pass","Package":"onespace.local/hub/updates","Test":"TestVersionReservationsAreSharedAndDurable","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.467498932Z","Action":"output","Package":"onespace.local/hub/updates","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.467502577Z","Action":"output","Package":"onespace.local/hub/updates","Output":"ok  \tonespace.local/hub/updates\t(cached)\n"}
+{"Time":"2026-10-27T12:01:07.467511751Z","Action":"pass","Package":"onespace.local/hub/updates","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.477705896Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership"}
+{"Time":"2026-10-27T12:01:07.477846347Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Output":"=== RUN   TestGatewayAuthorizationAndOwnership\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.479876404Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestUploadRecoveryAndIsolation"}
+{"Time":"2026-10-27T12:01:07.48022639Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestUploadRecoveryAndIsolation","Output":"=== RUN   TestUploadRecoveryAndIsolation\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.486607079Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Output":"--- PASS: TestGatewayAuthorizationAndOwnership (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.486638096Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayAuthorizationAndOwnership","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.486645517Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers"}
+{"Time":"2026-10-27T12:01:07.486648852Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Output":"=== RUN   TestGatewayRejectsLargeSDPAndCapsViewers\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.4873998Z","Action":"run","Package":"onespace.local/hub","Test":"TestConnectScopeAndOfflineTarget"}
+{"Time":"2026-10-27T12:01:07.48743364Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectScopeAndOfflineTarget","Output":"=== RUN   TestConnectScopeAndOfflineTarget\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501688397Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Output":"--- PASS: TestGatewayRejectsLargeSDPAndCapsViewers (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501731742Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRejectsLargeSDPAndCapsViewers","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.501747586Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation"}
+{"Time":"2026-10-27T12:01:07.501750731Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501757581Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect"}
+{"Time":"2026-10-27T12:01:07.501816309Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation/redirect\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501824061Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation/redirect (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501826294Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/redirect","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.501829178Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location"}
+{"Time":"2026-10-27T12:01:07.501831342Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Output":"=== RUN   TestGatewayRefusesRedirectAndForeignSessionLocation/location\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501875147Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation/location (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501877842Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation/location","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.501880245Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Output":"--- PASS: TestGatewayRefusesRedirectAndForeignSessionLocation (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.501882338Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayRefusesRedirectAndForeignSessionLocation","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.501884211Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers"}
+{"Time":"2026-10-27T12:01:07.501885964Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Output":"=== RUN   TestGatewayReaperClosesRevokedAndExpiredViewers\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.505620921Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Output":"--- PASS: TestGatewayReaperClosesRevokedAndExpiredViewers (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.505679149Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayReaperClosesRevokedAndExpiredViewers","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.505694442Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream"}
+{"Time":"2026-10-27T12:01:07.505698528Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Output":"=== RUN   TestGatewayOnlyAcceptsLoopbackUpstream\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.508545332Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Output":"--- PASS: TestGatewayOnlyAcceptsLoopbackUpstream (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.508568917Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayOnlyAcceptsLoopbackUpstream","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.508573194Z","Action":"run","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames"}
+{"Time":"2026-10-27T12:01:07.508575447Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Output":"=== RUN   TestGatewayStatusDoesNotPretendToMeasureFrames\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.508579093Z","Action":"output","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Output":"--- PASS: TestGatewayStatusDoesNotPretendToMeasureFrames (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.508581486Z","Action":"pass","Package":"onespace.local/hub/camera","Test":"TestGatewayStatusDoesNotPretendToMeasureFrames","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.50858375Z","Action":"output","Package":"onespace.local/hub/camera","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.534972849Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectScopeAndOfflineTarget","Output":"--- PASS: TestConnectScopeAndOfflineTarget (0.05s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.535071938Z","Action":"pass","Package":"onespace.local/hub","Test":"TestConnectScopeAndOfflineTarget","Elapsed":0.05}
+{"Time":"2026-10-27T12:01:07.537326603Z","Action":"run","Package":"onespace.local/hub","Test":"TestConnectCarriesIndependentPCIdentityAndEncryptedStream"}
+{"Time":"2026-10-27T12:01:07.537345071Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectCarriesIndependentPCIdentityAndEncryptedStream","Output":"=== RUN   TestConnectCarriesIndependentPCIdentityAndEncryptedStream\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.53778422Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestUploadRecoveryAndIsolation","Output":"--- PASS: TestUploadRecoveryAndIsolation (0.06s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.537795887Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestUploadRecoveryAndIsolation","Elapsed":0.06}
+{"Time":"2026-10-27T12:01:07.537801656Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestExpiredSessionAndResumeProbe"}
+{"Time":"2026-10-27T12:01:07.53780428Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestExpiredSessionAndResumeProbe","Output":"=== RUN   TestExpiredSessionAndResumeProbe\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.563192266Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectCarriesIndependentPCIdentityAndEncryptedStream","Output":"--- PASS: TestConnectCarriesIndependentPCIdentityAndEncryptedStream (0.03s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.563244004Z","Action":"pass","Package":"onespace.local/hub","Test":"TestConnectCarriesIndependentPCIdentityAndEncryptedStream","Elapsed":0.03}
+{"Time":"2026-10-27T12:01:07.563258406Z","Action":"run","Package":"onespace.local/hub","Test":"TestConnectRevocationAndCapacity"}
+{"Time":"2026-10-27T12:01:07.563262111Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectRevocationAndCapacity","Output":"=== RUN   TestConnectRevocationAndCapacity\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.609932611Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestExpiredSessionAndResumeProbe","Output":"--- PASS: TestExpiredSessionAndResumeProbe (0.07s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.609980933Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestExpiredSessionAndResumeProbe","Elapsed":0.07}
+{"Time":"2026-10-27T12:01:07.610021394Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestRetentionAndManagedFolderBoundary"}
+{"Time":"2026-10-27T12:01:07.610026061Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRetentionAndManagedFolderBoundary","Output":"=== RUN   TestRetentionAndManagedFolderBoundary\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.618023758Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRetentionAndManagedFolderBoundary","Output":"--- PASS: TestRetentionAndManagedFolderBoundary (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.61807155Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestRetentionAndManagedFolderBoundary","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.618083057Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestAuthorizationAndInputLimits"}
+{"Time":"2026-10-27T12:01:07.618087373Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestAuthorizationAndInputLimits","Output":"=== RUN   TestAuthorizationAndInputLimits\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.618689628Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestAuthorizationAndInputLimits","Output":"--- PASS: TestAuthorizationAndInputLimits (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.618701075Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestAuthorizationAndInputLimits","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.618705261Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestSessionSSRFAndSafeErrors"}
+{"Time":"2026-10-27T12:01:07.618708055Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestSessionSSRFAndSafeErrors","Output":"=== RUN   TestSessionSSRFAndSafeErrors\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.620617973Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestSessionSSRFAndSafeErrors","Output":"--- PASS: TestSessionSSRFAndSafeErrors (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.620634347Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestSessionSSRFAndSafeErrors","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.620647918Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestMetadataFailureRollsBackInsertAndDelete"}
+{"Time":"2026-10-27T12:01:07.620651784Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestMetadataFailureRollsBackInsertAndDelete","Output":"=== RUN   TestMetadataFailureRollsBackInsertAndDelete\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.621258434Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestMetadataFailureRollsBackInsertAndDelete","Output":"--- PASS: TestMetadataFailureRollsBackInsertAndDelete (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.62127542Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestMetadataFailureRollsBackInsertAndDelete","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.621280047Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestRecordingCompletionAndVerifiedCleanup"}
+{"Time":"2026-10-27T12:01:07.621283742Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRecordingCompletionAndVerifiedCleanup","Output":"=== RUN   TestRecordingCompletionAndVerifiedCleanup\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.632940564Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRecordingCompletionAndVerifiedCleanup","Output":"--- PASS: TestRecordingCompletionAndVerifiedCleanup (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.632975516Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestRecordingCompletionAndVerifiedCleanup","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.632983408Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestRemoteChecksumMismatchPreservesLocalRecording"}
+{"Time":"2026-10-27T12:01:07.632991099Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRemoteChecksumMismatchPreservesLocalRecording","Output":"=== RUN   TestRemoteChecksumMismatchPreservesLocalRecording\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.638322414Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRemoteChecksumMismatchPreservesLocalRecording","Output":"--- PASS: TestRemoteChecksumMismatchPreservesLocalRecording (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.638344948Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestRemoteChecksumMismatchPreservesLocalRecording","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:07.638351718Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestRetentionUsesIndexedExpiryDay"}
+{"Time":"2026-10-27T12:01:07.638354602Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRetentionUsesIndexedExpiryDay","Output":"=== RUN   TestRetentionUsesIndexedExpiryDay\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.642342064Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRetentionUsesIndexedExpiryDay","Output":"--- PASS: TestRetentionUsesIndexedExpiryDay (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:07.642387592Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestRetentionUsesIndexedExpiryDay","Elapsed":0}
+{"Time":"2026-10-27T12:01:07.642395874Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestSpoolPauseAndResume"}
+{"Time":"2026-10-27T12:01:07.642398478Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestSpoolPauseAndResume","Output":"=== RUN   TestSpoolPauseAndResume\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.509083639Z","Action":"output","Package":"onespace.local/hub/camera","Output":"ok  \tonespace.local/hub/camera\t1.042s\n"}
+{"Time":"2026-10-27T12:01:08.509700476Z","Action":"pass","Package":"onespace.local/hub/camera","Elapsed":1.043}
+{"Time":"2026-10-27T12:01:08.65770105Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectRevocationAndCapacity","Output":"--- PASS: TestConnectRevocationAndCapacity (1.09s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.657806058Z","Action":"pass","Package":"onespace.local/hub","Test":"TestConnectRevocationAndCapacity","Elapsed":1.09}
+{"Time":"2026-10-27T12:01:08.657819608Z","Action":"run","Package":"onespace.local/hub","Test":"TestConnectRejectsBodyAndOrdinaryHTTP"}
+{"Time":"2026-10-27T12:01:08.657822122Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectRejectsBodyAndOrdinaryHTTP","Output":"=== RUN   TestConnectRejectsBodyAndOrdinaryHTTP\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.665834482Z","Action":"output","Package":"onespace.local/hub","Test":"TestConnectRejectsBodyAndOrdinaryHTTP","Output":"--- PASS: TestConnectRejectsBodyAndOrdinaryHTTP (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.665970636Z","Action":"pass","Package":"onespace.local/hub","Test":"TestConnectRejectsBodyAndOrdinaryHTTP","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.666011428Z","Action":"run","Package":"onespace.local/hub","Test":"TestCloudPermissionUpgradePreservesExistingToken"}
+{"Time":"2026-10-27T12:01:08.666014182Z","Action":"output","Package":"onespace.local/hub","Test":"TestCloudPermissionUpgradePreservesExistingToken","Output":"=== RUN   TestCloudPermissionUpgradePreservesExistingToken\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.668223629Z","Action":"output","Package":"onespace.local/hub","Test":"TestCloudPermissionUpgradePreservesExistingToken","Output":"--- PASS: TestCloudPermissionUpgradePreservesExistingToken (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.66823778Z","Action":"pass","Package":"onespace.local/hub","Test":"TestCloudPermissionUpgradePreservesExistingToken","Elapsed":0}
+{"Time":"2026-10-27T12:01:08.668241315Z","Action":"run","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure"}
+{"Time":"2026-10-27T12:01:08.66824416Z","Action":"output","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Output":"=== RUN   TestAuthAndNoCredentialDisclosure\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.678897755Z","Action":"output","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Output":"--- PASS: TestAuthAndNoCredentialDisclosure (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.678957144Z","Action":"pass","Package":"onespace.local/hub","Test":"TestAuthAndNoCredentialDisclosure","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.678962332Z","Action":"run","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency"}
+{"Time":"2026-10-27T12:01:08.678964846Z","Action":"output","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Output":"=== RUN   TestDurableDeliveryScopedAckAndIdempotency\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.690422999Z","Action":"output","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Output":"--- PASS: TestDurableDeliveryScopedAckAndIdempotency (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.690451982Z","Action":"pass","Package":"onespace.local/hub","Test":"TestDurableDeliveryScopedAckAndIdempotency","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.690457681Z","Action":"run","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt"}
+{"Time":"2026-10-27T12:01:08.690460214Z","Action":"output","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Output":"=== RUN   TestLongPollWakesAndRevocationCancelsIt\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.709405142Z","Action":"output","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Output":"--- PASS: TestLongPollWakesAndRevocationCancelsIt (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.71049977Z","Action":"pass","Package":"onespace.local/hub","Test":"TestLongPollWakesAndRevocationCancelsIt","Elapsed":0.02}
+{"Time":"2026-10-27T12:01:08.710538939Z","Action":"run","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk"}
+{"Time":"2026-10-27T12:01:08.710541733Z","Action":"output","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Output":"=== RUN   TestExpiryPurgesPlaintextFromDisk\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.718111734Z","Action":"output","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Output":"--- PASS: TestExpiryPurgesPlaintextFromDisk (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.718133637Z","Action":"pass","Package":"onespace.local/hub","Test":"TestExpiryPurgesPlaintextFromDisk","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.718139385Z","Action":"run","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish"}
+{"Time":"2026-10-27T12:01:08.718141939Z","Action":"output","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Output":"=== RUN   TestFailedPersistenceDoesNotAcknowledgeOrPublish\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.727543925Z","Action":"output","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Output":"--- PASS: TestFailedPersistenceDoesNotAcknowledgeOrPublish (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.72757373Z","Action":"pass","Package":"onespace.local/hub","Test":"TestFailedPersistenceDoesNotAcknowledgeOrPublish","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.727585127Z","Action":"run","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation"}
+{"Time":"2026-10-27T12:01:08.727587751Z","Action":"output","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Output":"=== RUN   TestResourceLimitsAndStrictRequestValidation\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.747928489Z","Action":"output","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Output":"--- PASS: TestResourceLimitsAndStrictRequestValidation (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.747967248Z","Action":"pass","Package":"onespace.local/hub","Test":"TestResourceLimitsAndStrictRequestValidation","Elapsed":0.02}
+{"Time":"2026-10-27T12:01:08.74797525Z","Action":"run","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity"}
+{"Time":"2026-10-27T12:01:08.747982941Z","Action":"output","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Output":"=== RUN   TestLockAndRestartPreserveCredentialsAndIdentity\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.750670466Z","Action":"output","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Output":"--- PASS: TestLockAndRestartPreserveCredentialsAndIdentity (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.7507197Z","Action":"pass","Package":"onespace.local/hub","Test":"TestLockAndRestartPreserveCredentialsAndIdentity","Elapsed":0}
+{"Time":"2026-10-27T12:01:08.750735524Z","Action":"run","Package":"onespace.local/hub","Test":"TestTLSRequired"}
+{"Time":"2026-10-27T12:01:08.750738769Z","Action":"output","Package":"onespace.local/hub","Test":"TestTLSRequired","Output":"=== RUN   TestTLSRequired\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.752675056Z","Action":"output","Package":"onespace.local/hub","Test":"TestTLSRequired","Output":"--- PASS: TestTLSRequired (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.752689447Z","Action":"pass","Package":"onespace.local/hub","Test":"TestTLSRequired","Elapsed":0}
+{"Time":"2026-10-27T12:01:08.752694184Z","Action":"run","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet"}
+{"Time":"2026-10-27T12:01:08.752696398Z","Action":"output","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Output":"=== RUN   TestTrustedSourcesIncludeOverlayButNotPublicInternet\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.752755056Z","Action":"output","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Output":"--- PASS: TestTrustedSourcesIncludeOverlayButNotPublicInternet (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.752760033Z","Action":"pass","Package":"onespace.local/hub","Test":"TestTrustedSourcesIncludeOverlayButNotPublicInternet","Elapsed":0}
+{"Time":"2026-10-27T12:01:08.752810529Z","Action":"run","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest"}
+{"Time":"2026-10-27T12:01:08.752812933Z","Action":"output","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Output":"=== RUN   TestCoalescedClipboardOldAckDoesNotDelayLatest\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.765701563Z","Action":"output","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Output":"--- PASS: TestCoalescedClipboardOldAckDoesNotDelayLatest (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.76575314Z","Action":"pass","Package":"onespace.local/hub","Test":"TestCoalescedClipboardOldAckDoesNotDelayLatest","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:08.765760752Z","Action":"run","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence"}
+{"Time":"2026-10-27T12:01:08.765763416Z","Action":"output","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Output":"=== RUN   TestCameraRechecksDoNotInventPresence\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.765767462Z","Action":"output","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Output":"--- PASS: TestCameraRechecksDoNotInventPresence (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.765769986Z","Action":"pass","Package":"onespace.local/hub","Test":"TestCameraRechecksDoNotInventPresence","Elapsed":0}
+{"Time":"2026-10-27T12:01:08.765772049Z","Action":"run","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable"}
+{"Time":"2026-10-27T12:01:08.765773801Z","Action":"output","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Output":"=== RUN   TestEscapedClipboardBatchIsBoundedAndDeliverable\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.917845876Z","Action":"output","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Output":"--- PASS: TestEscapedClipboardBatchIsBoundedAndDeliverable (0.15s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:08.917892637Z","Action":"pass","Package":"onespace.local/hub","Test":"TestEscapedClipboardBatchIsBoundedAndDeliverable","Elapsed":0.15}
+{"Time":"2026-10-27T12:01:08.917899116Z","Action":"output","Package":"onespace.local/hub","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:09.920940077Z","Action":"output","Package":"onespace.local/hub","Output":"ok  \tonespace.local/hub\t2.454s\n"}
+{"Time":"2026-10-27T12:01:09.925684951Z","Action":"pass","Package":"onespace.local/hub","Elapsed":2.46}
+{"Time":"2026-10-27T12:01:12.044626597Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestSpoolPauseAndResume","Output":"--- PASS: TestSpoolPauseAndResume (4.40s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:12.044736852Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestSpoolPauseAndResume","Elapsed":4.4}
+{"Time":"2026-10-27T12:01:12.0447487Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestRealMediaMTXRecording"}
+{"Time":"2026-10-27T12:01:12.044752856Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRealMediaMTXRecording","Output":"=== RUN   TestRealMediaMTXRecording\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.968218674Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRealMediaMTXRecording","Output":"    mediamtx_integration_test.go:168: real MediaMTX v1.21.2 finalized 2 playable H.264 MP4 segments; CLI hook created completion markers\n"}
+{"Time":"2026-10-27T12:01:31.971361488Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestRealMediaMTXRecording","Output":"--- PASS: TestRealMediaMTXRecording (19.93s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.971397802Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestRealMediaMTXRecording","Elapsed":19.93}
+{"Time":"2026-10-27T12:01:31.971417792Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState"}
+{"Time":"2026-10-27T12:01:31.971420907Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState","Output":"=== RUN   TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.975010746Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState","Output":"--- PASS: TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.975031968Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestOAuthUsesPKCEOfflineScopeAndRejectsWrongState","Elapsed":0}
+{"Time":"2026-10-27T12:01:31.975039159Z","Action":"run","Package":"onespace.local/hub/cloud","Test":"TestTokenRefreshIsSerializedAndCredentialsOwnerOnly"}
+{"Time":"2026-10-27T12:01:31.975041402Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestTokenRefreshIsSerializedAndCredentialsOwnerOnly","Output":"=== RUN   TestTokenRefreshIsSerializedAndCredentialsOwnerOnly\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.984358181Z","Action":"output","Package":"onespace.local/hub/cloud","Test":"TestTokenRefreshIsSerializedAndCredentialsOwnerOnly","Output":"--- PASS: TestTokenRefreshIsSerializedAndCredentialsOwnerOnly (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:31.984376738Z","Action":"pass","Package":"onespace.local/hub/cloud","Test":"TestTokenRefreshIsSerializedAndCredentialsOwnerOnly","Elapsed":0.01}
+{"Time":"2026-10-27T12:01:31.984382147Z","Action":"output","Package":"onespace.local/hub/cloud","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-27T12:01:32.990991347Z","Action":"output","Package":"onespace.local/hub/cloud","Output":"ok  \tonespace.local/hub/cloud\t25.524s\n"}
+{"Time":"2026-10-27T12:01:32.994233014Z","Action":"pass","Package":"onespace.local/hub/cloud","Elapsed":25.527}

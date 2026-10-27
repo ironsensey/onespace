@@ -15,13 +15,16 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 /** All hub HTTP is authenticated and exact-certificate pinned, including native WebRTC signaling. */
-class HubApi(address: String, fingerprint: String, private val token: String) {
+class HubApi(address: String, fingerprint: String, private val token: String, private val localAddress: String = "") {
     val baseUrl = HubPolicy.baseUrl(address)
     private val pin = HubPolicy.normalizedPin(fingerprint)
     private val active = ConcurrentHashMap.newKeySet<HttpsURLConnection>()
     @Volatile private var cancelled = false
     data class Response(val status: Int, val body: String, val location: String?)
     companion object {
+        internal fun pinnedSocketFactory(fingerprint: String) = context(HubPolicy.normalizedPin(fingerprint)).socketFactory
+        @Volatile private var route: Triple<String, String, Long>? = null
+        internal fun invalidateRoute() { route = null }
         @Volatile private var cached: Pair<String, SSLContext>? = null
         @Synchronized private fun context(pin: String): SSLContext {
             cached?.takeIf { it.first == pin }?.let { return it.second }
@@ -42,7 +45,42 @@ class HubApi(address: String, fingerprint: String, private val token: String) {
             }
         }
     }
-    fun freshForCleanup() = HubApi(baseUrl.removePrefix("https://"), pin, token)
+    internal fun connectionAddress(): String {
+        if (localAddress.isBlank()) return baseUrl
+        val local = HubPolicy.baseUrl(localAddress)
+        val key = "$baseUrl:$local:$pin"
+        val now = System.nanoTime() / 1000000
+        route?.let { if (it.first == key && it.third > now) return it.second }
+        var selected = baseUrl
+        val probe = URL(local + "/hub/v1/info").openConnection() as HttpsURLConnection
+        try {
+            probe.sslSocketFactory = context(pin).socketFactory
+            probe.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
+            probe.instanceFollowRedirects = false
+            probe.connectTimeout = 800
+            probe.readTimeout = 800
+            if (probe.responseCode == 200) selected = local
+        } catch (_: IOException) { } finally { probe.disconnect() }
+        route = Triple(key, selected, now + 30000)
+        return selected
+    }
+    fun downloadUpdate(receiver: (java.io.InputStream) -> Unit) {
+        if (cancelled) throw IOException("Hub request cancelled")
+        val connection = URL(connectionAddress() + "/hub/v1/updates/apk").openConnection() as HttpsURLConnection
+        active.add(connection)
+        try {
+            connection.sslSocketFactory = context(pin).socketFactory
+            connection.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
+            connection.instanceFollowRedirects = false
+            connection.connectTimeout = 4000
+            connection.readTimeout = 65000
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            if (cancelled) throw IOException("Hub request cancelled")
+            if (connection.responseCode != 200) throw IOException("Pi update download failed")
+            connection.inputStream.use(receiver)
+        } finally { active.remove(connection); connection.disconnect() }
+    }
+    fun freshForCleanup() = HubApi(baseUrl.removePrefix("https://"), pin, token, localAddress)
     fun cancel() { cancelled = true; active.forEach { it.disconnect() } }
     fun raw(path: String, method: String = "GET", body: String? = null, contentType: String = "application/json"): Response {
         val bytes = body?.toByteArray(Charsets.UTF_8)
@@ -57,7 +95,7 @@ class HubApi(address: String, fingerprint: String, private val token: String) {
         require(path.startsWith("/hub/v1/") && !path.contains("..") && !path.contains('\\'))
         if (cancelled) throw IOException("Hub request cancelled")
         var complete = false
-        val connection = URL(baseUrl + path).openConnection() as HttpsURLConnection
+        val connection = URL(connectionAddress() + path).openConnection() as HttpsURLConnection
         active.add(connection)
         try {
             connection.sslSocketFactory = context(pin).socketFactory
@@ -96,7 +134,7 @@ class HubApi(address: String, fingerprint: String, private val token: String) {
             }
             complete = true
             return Response(code, bytes.toString(Charsets.UTF_8), connection.getHeaderField("Location"))
-        } finally { active.remove(connection); if (!complete || cancelled) connection.disconnect() }
+        } catch (error: IOException) { invalidateRoute(); throw error } finally { active.remove(connection); if (!complete || cancelled) connection.disconnect() }
     }
     fun request(path: String, method: String = "GET", body: JSONObject? = null) = JSONObject(raw(path, method, body?.toString()).body.ifBlank { "{}" })
     fun list(path: String) = JSONArray(raw(path).body)

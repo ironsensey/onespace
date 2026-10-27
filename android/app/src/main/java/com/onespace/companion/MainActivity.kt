@@ -200,7 +200,7 @@ class MainActivity : Activity() {
     }
     private fun navigate(page: String) { currentPage=page; showScreen() }
     @Deprecated("Navigate back to OneSpace dashboard")
-    override fun onBackPressed() { if (currentPage != "Home" && store.paired() && unlocked) navigate("Home") else super.onBackPressed() }
+    override fun onBackPressed() { if (currentPage != "Home" && (store.paired() || HubProfile(this).configured()) && unlocked) navigate("Home") else super.onBackPressed() }
 
 
     private fun label(text: String, size: Float = 14f, bold: Boolean = false): TextView = TextView(this).apply {
@@ -226,7 +226,7 @@ class MainActivity : Activity() {
     private fun runTask(action: () -> Unit) { worker.execute { try{action()}catch(e: Exception){info("⚠ ${e.message ?: "Operation failed"}")} } }
     private fun api(): OneSpaceApi {
         if(!store.paired())throw IllegalStateException("Pair a Windows PC first")
-        return OneSpaceApi(PcRoute.host(this,store),store.fingerprint(),store.token()) { PcRoute.recover(this,store) }
+        return PcRoute.api(this,store)
     }
     private fun showScreen() {
         val scroll=ScrollView(this).apply { setBackgroundColor(baseColor()); isFillViewport=true; clipToPadding=false }
@@ -265,19 +265,24 @@ class MainActivity : Activity() {
             "Settings" -> settingsPage()
             else -> homePage()
         }
-        if (store.paired()) autoCheckForUpdatesOnce()
+        if (store.paired() || HubProfile(this).configured() && features.get("hub_updates")) autoCheckForUpdatesOnce()
     }
     private fun onboarding() {
         section("Connect to your Windows PC")
-        root.addView(label("On Windows, open http://127.0.0.1:47600 → Devices. Copy the PC IP and the complete SHA-256 fingerprint. This verifies that no one on the Wi-Fi is impersonating your PC."))
+        root.addView(label("On Windows, open OneSpace → Home or Devices. Copy the PC IP and the complete SHA-256 fingerprint. This verifies that no one on the Wi-Fi is impersonating your PC."))
         val ip=field("PC IP, e.g. 192.168.1.10");val fingerprint=field("64-character PC fingerprint");val pass=field("Ecosystem password",true)
         val device=field("This phone's name").apply{text?.append(Build.MANUFACTURER + " " + Build.MODEL)}
         listOf(ip,fingerprint,pass,device).forEach {root.addView(it)}
+        val pairViaPi = Switch(this).apply { this.text = "Pair through configured Pi (no VPN app)"; setTextColor(Color.WHITE); isChecked = PcRoute.builtin(this@MainActivity) }
+        if (HubProfile(this).configured()) root.addView(pairViaPi)
+
         root.addView(button("Request secure pairing") {
-            val host=ip.text.toString().trim();val hash=fingerprint.text.toString();val pwd=pass.text.toString();val name=device.text.toString().trim()
+            val host=ip.text.toString().trim();val hash=fingerprint.text.toString();val pwd=pass.text.toString();val name=device.text.toString().trim();val relayPairing=pairViaPi.isChecked
             if(pwd.isEmpty()||name.isEmpty()){info("Enter a password and device name");return@button}
             runTask {
-                val client=OneSpaceApi(host,hash)
+                val hub = HubProfile(this)
+                val tunnel = if (relayPairing && hub.configured()) HubTunnelConfig(hub.host(), hub.fingerprint(), hub.token(), hub.target(), hub.localHost()) else null
+                val client=OneSpaceApi(host,hash,tunnel = tunnel)
                 val req=client.request("/v1/pair/request","POST", JSONObject().put("password",pwd).put("name",name))
                 pairingHost=host;pairingPin=hash;pendingRequest=req.getString("id");pendingTicket=req.getString("ticket")
                 info("Pair request sent. Approve this phone in the Windows dashboard.")
@@ -287,7 +292,7 @@ class MainActivity : Activity() {
                     Thread.sleep(3000)
                     val result=client.request("/v1/pair/status?id=$pendingRequest&ticket=$pendingTicket")
                     when(result.getString("state")) {
-                        "approved" -> {store.save(pairingHost,pairingPin,result.getString("token"));runOnUiThread {onUnlocked()};info("Windows paired successfully");return@runTask}
+                        "approved" -> {store.save(pairingHost,pairingPin,result.getString("token"));if(relayPairing) PcRoute.setBuiltin(this,true);runOnUiThread {onUnlocked()};info("Windows paired successfully");return@runTask}
                         "rejected" -> throw IOException("Pair request was rejected on Windows")
                     }
                 }
@@ -379,28 +384,30 @@ class MainActivity : Activity() {
     private fun hubPage() {
         val hub = HubProfile(this)
         section("Raspberry Pi hub")
-        note("Pi Hub Preview · optional Google Drive storage and recording. Use a trusted LAN or your private Tailscale network. Existing PC pairing stays unchanged. Hub text mode is explicit; it does not silently reroute uncertain LAN sends.")
+        note("OneSpace Connect includes encrypted PC access through your Pi, Google Drive storage and camera recording. Use a reachable Pi address; Tailscale is optional. Existing PC identity and permissions remain required.")
         val host = field("Pi host or overlay DNS name:47603").apply { setText(hub.host()) }
+        val localHost = field("Optional Pi LAN address:47603").apply { setText(hub.localHost()) }
         val pin = field("Pi SHA-256 certificate fingerprint").apply { setText(hub.fingerprint()) }
         val token = field("Device token from Pi enrollment", true)
         val target = field("Target device ID, e.g. windows").apply { setText(hub.target()) }
-        listOf(host, pin, token, target).forEach { root.addView(it) }
+        listOf(host, localHost, pin, token, target).forEach { root.addView(it) }
         note("Copy the fingerprint directly from your Pi. Leave token blank to retain your saved encrypted credential. Give this phone only the scopes it needs; camera and clipboard are separate permissions.")
         root.addView(button("Verify and save hub") {
             val address = host.text.toString().trim()
             val fingerprint = pin.text.toString().trim()
             val enteredCredential = token.text.toString().trim()
             val destination = target.text.toString().trim()
+            val localAddress = localHost.text.toString().trim()
             token.text.clear()
             runTask {
                 val credential = enteredCredential.ifBlank {
                     require(hub.configured() && HubPolicy.normalizedPin(fingerprint) == hub.fingerprint()) { "Enter a new token when changing hub identity" }
                     hub.token()
                 }
-                val client = HubApi(address, fingerprint, credential)
+                val client = HubApi(address, fingerprint, credential, localAddress)
                 require(client.request("/hub/v1/info").optString("app") == "OneSpace Hub") { "Unexpected hub" }
                 client.list("/hub/v1/devices") // Verify token authorization before retaining it.
-                hub.save(address, fingerprint, credential, destination)
+                hub.save(address, fingerprint, credential, destination, localAddress)
                 runOnUiThread {
                     if (unlocked) { refreshBackgroundService(); showScreen() } else requestUnlock()
                     info("Hub identity and credential verified")
@@ -420,12 +427,26 @@ class MainActivity : Activity() {
         switchRow("hub_receive", "Receive hub clipboard text", "Visible background connection; mobile data may be used") { enabled ->
             if (enabled) { features.set("background", true); askNotificationThenStart() } else refreshBackgroundService()
         }
-        note("Hub clipboard messages expire quickly. Paste is activated only while OneSpace is unlocked and focused. This preview relays text and media commands; pictures/files keep using the existing direct PC connection.")
+        note("Hub clipboard messages expire quickly. Paste is activated only while OneSpace is unlocked and focused. OneSpace Connect can carry the existing encrypted PC connection, including pictures, files and workspace. Short hub text remains a separate route.")
         val text = field("Text to send through Pi")
         root.addView(text)
         root.addView(button("Send hub text now") { val value = text.text.toString(); sendHubAction { client, destination -> client.sendText(destination, value); info("Text queued; recipient delivery is separate") } })
         if (store.paired()) {
-            section("Direct PC over private overlay")
+            section("Built-in OneSpace Connect")
+            note("Uses direct LAN first, then an encrypted PC connection through your Pi. No separate VPN app. Windows must enable OneSpace Connect and both hub devices need the connect scope. The Pi must be reachable from both devices.")
+            val builtin = Switch(this).apply { this.text = "Use built-in Pi fallback for PC features"; setTextColor(Color.WHITE); isChecked = PcRoute.builtin(this@MainActivity) }
+            builtin.setOnCheckedChangeListener { _, enabled ->
+                try { PcRoute.setBuiltin(this, enabled); refreshBackgroundService() }
+                catch (_: Exception) { builtin.isChecked = false; info("Configure the Pi and Windows target first") }
+            }
+            root.addView(builtin)
+            root.addView(button("Test built-in encrypted PC connection") { runTask {
+                val profile = HubProfile(this)
+                val tunnel = HubTunnelConfig(profile.host(), profile.fingerprint(), profile.token(), profile.target(), profile.localHost())
+                require(OneSpaceApi(store.host(), store.fingerprint(), store.token(), tunnel).verifyRoute(4000)) { "PC identity check failed" }
+                info("Pi relay and original PC certificate verified")
+            } })
+            section("Optional existing private overlay")
             note("Optional: carry existing files, images, camera photos and APK updates over your private overlay. Same PC certificate and token; original LAN address is preserved. No automatic uncertain-POST fallback.")
             val pcHost = field("PC Tailscale DNS name or IPv4 address").apply { setText(PcRoute.savedHost(this@MainActivity)) }
             root.addView(pcHost)
@@ -450,6 +471,7 @@ class MainActivity : Activity() {
             root.addView(mobile)
             note("Mobile transfer is off by default. Enabling it may send large camera photos and files using billable data. Automatic background sync otherwise stays on Wi-Fi/Ethernet. VPN networks with unknown physical routing also require this consent. The updated PC must explicitly allow its private overlay subnet.")
         }
+        switchRow("hub_updates", "Get Android updates from Pi", "Works while Windows is off; your phone hub token needs the updates scope") { }
         section("Media controls")
         note("Connect-style controls target the chosen Windows device. It must opt in locally and be online. These are system media keys, not a Spotify account integration.")
         listOf("play_pause" to "Play / Pause", "next" to "Next track", "previous" to "Previous track", "stop" to "Stop").forEach { (action, title) ->
@@ -477,6 +499,7 @@ class MainActivity : Activity() {
         if (!store.paired()) {
             note("Your Pi works independently of Windows. Add a separate PC pairing only for direct PC features.")
             root.addView(button("Add direct Windows pairing") { navigate("Pair PC") })
+            root.addView(button("Pi-hosted Android updates") { features.set("hub_updates",true);navigate("Updates") })
             root.addView(button("Settings") { navigate("Settings") })
             return
         }
@@ -576,7 +599,8 @@ class MainActivity : Activity() {
     } catch (_: Exception) { 0 }
     private fun updatesPage() {
         section("Update Center")
-        note("OneSpace v${installedVersion()} (code ${installedVersionCode()})\nFull APK updates are downloaded from your authenticated, certificate-pinned Windows PC. Android verifies the release signature and asks to install it.")
+        if (HubProfile(this).configured()) switchRow("hub_updates", "Download updates from Pi", "Requires the phone hub token’s updates scope") { }
+        note("OneSpace v${installedVersion()} (code ${installedVersionCode()})\nFull APK updates use your selected certificate-pinned source. Pi-hosted updates remain available while Windows is off. Android verifies the release signature and asks to install it.")
         root.addView(button("Check for an update") {checkUpdates()})
         root.addView(button("Install downloaded update") {
             try{if(!OneSpaceUpdater(this).launchInstaller())info("Allow OneSpace to install apps when Android asks, then return")}
@@ -741,7 +765,7 @@ class MainActivity : Activity() {
             if(title.text.isNotBlank())runTask{api().request("/v1/notes","POST",JSONObject().put("title",title.text.toString()).put("body",content.text.toString()));info("Note saved")}
         }.setNegativeButton("Cancel",null).show()
     }
-    private fun showUpdateOffer(release: OneSpaceUpdater.Release, updater: OneSpaceUpdater, client: OneSpaceApi) {
+    private fun showUpdateOffer(release: OneSpaceUpdater.Release, updater: OneSpaceUpdater, client: UpdateSource) {
         runOnUiThread {
             if (isFinishing || isDestroyed || !unlocked || updateDialog?.isShowing == true) return@runOnUiThread
             val cached = updater.isCached(release)
@@ -764,12 +788,13 @@ class MainActivity : Activity() {
                 .putLong("prompted_version", release.versionCode).apply()
         }
     }
+    private fun updateSource(): UpdateSource = if (features.get("hub_updates") && HubProfile(this).configured()) HubUpdateSource(HubProfile(this).client()) else api()
     private fun checkUpdates() {
         runTask {
             val updater = OneSpaceUpdater(this)
-            val client = api()
+            val client = updateSource()
             val release = updater.check(client)
-            if (release == null) info("You're running the latest published release on this PC")
+            if (release == null) info("No newer release is available from the selected update source")
             else showUpdateOffer(release, updater, client)
         }
     }
@@ -780,7 +805,7 @@ class MainActivity : Activity() {
         runTask {
             try {
                 val updater = OneSpaceUpdater(this)
-                val client = api()
+                val client = updateSource()
                 val release = updater.check(client)
                 if (release != null && !updater.isCached(release)) {
                     val prefs = getSharedPreferences("onespace_update_prompts", MODE_PRIVATE)

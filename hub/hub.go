@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const Version = "0.8.0-preview"
+const Version = "0.9.0-preview"
 const MaxPending = 256
 const MaxDevices = 128
 const MaxTextBytes = 64 << 10
@@ -109,6 +109,9 @@ type Hub struct {
 	done            chan struct{}
 	storageHealthy  bool
 	recordingStatus func() bool
+	connectWaiting  map[string][]*connectPeer
+	connectCount    map[string]int
+	connectTotal    int
 	polls           map[string]int
 }
 
@@ -138,7 +141,7 @@ func Open(dir string) (*Hub, error) {
 	if err != nil {
 		return nil, err
 	}
-	h := &Hub{dir: dir, mux: http.NewServeMux(), wake: make(chan struct{}), started: time.Now(), lock: lock, done: make(chan struct{}), storageHealthy: true, polls: map[string]int{},
+	h := &Hub{dir: dir, mux: http.NewServeMux(), wake: make(chan struct{}), started: time.Now(), lock: lock, done: make(chan struct{}), storageHealthy: true, polls: map[string]int{}, connectWaiting: map[string][]*connectPeer{}, connectCount: map[string]int{},
 		state: state{Schema: 1, Devices: map[string]deviceRecord{}, Events: []Event{}, Receipts: map[string]receipt{}}}
 	file := filepath.Join(dir, "hub.json")
 	if data, err := os.ReadFile(file); err == nil {
@@ -163,6 +166,7 @@ func Open(dir string) (*Hub, error) {
 	h.mux.HandleFunc("/hub/v1/events", h.events)
 	h.mux.HandleFunc("/hub/v1/events/", h.ack)
 	h.mux.HandleFunc("/hub/v1/health", h.health)
+	h.mux.HandleFunc("/hub/v1/connect/", h.connect)
 	go h.retentionLoop()
 	return h, nil
 }
@@ -441,7 +445,7 @@ func (h *Hub) Enroll(id, name, kind string, scopes []string) (string, error) {
 	}
 	allowed := map[string]bool{}
 	for _, scope := range scopes {
-		if scope != "clipboard" && scope != "media" && scope != "camera" && scope != "cloud" && scope != "recording" {
+		if scope != "clipboard" && scope != "media" && scope != "camera" && scope != "cloud" && scope != "recording" && scope != "connect" && scope != "updates" && scope != "updates.publish" {
 			return "", errors.New("unknown scope")
 		}
 		allowed[scope] = true
@@ -504,7 +508,7 @@ func (h *Hub) info(w http.ResponseWriter, r *http.Request) {
 	if !method(w, r, http.MethodGet) {
 		return
 	}
-	reply(w, 200, map[string]any{"app": "OneSpace Hub", "version": Version, "protocolVersion": 1, "recording": h.recording(), "capabilities": []string{"clipboard.text", "media", "live.camera", "cloud.drive", "camera.recording.opt-in"}, "maxTextBytes": MaxTextBytes})
+	reply(w, 200, map[string]any{"app": "OneSpace Hub", "version": Version, "protocolVersion": 1, "recording": h.recording(), "capabilities": []string{"clipboard.text", "media", "live.camera", "cloud.drive", "camera.recording.opt-in", "connect.tls-relay", "updates.android", "updates.version-reservation"}, "maxTextBytes": MaxTextBytes})
 }
 func (h *Hub) devices(w http.ResponseWriter, r *http.Request) {
 	if !method(w, r, http.MethodGet) {
@@ -842,7 +846,7 @@ func (h *Hub) Shutdown(ctx context.Context, server *http.Server) error {
 func (h *Hub) SetScopes(id string, scopes []string) error {
 	allowed := map[string]bool{}
 	for _, s := range scopes {
-		if s != "clipboard" && s != "media" && s != "camera" && s != "cloud" && s != "recording" {
+		if s != "clipboard" && s != "media" && s != "camera" && s != "cloud" && s != "recording" && s != "connect" && s != "updates" && s != "updates.publish" {
 			return errors.New("unknown scope")
 		}
 		allowed[s] = true

@@ -23,6 +23,8 @@ import (
 )
 
 type HubConfig struct {
+	LocalAddress     string   `json:"localAddress,omitempty"`
+	Connect          bool     `json:"connect"`
 	Address          string   `json:"address"`
 	Fingerprint      string   `json:"fingerprint"`
 	Token            string   `json:"token,omitempty"`
@@ -98,6 +100,12 @@ func validateHubConfig(c HubConfig) error {
 	if c.Enabled && c.ClipboardMode == "hub" && c.Target == "" {
 		return errors.New("Select a target device before routing clipboard text through the hub")
 	}
+	if c.LocalAddress != "" {
+		local, e := url.Parse(c.LocalAddress)
+		if e != nil || local.Scheme != "https" || local.Hostname() == "" || local.User != nil || (local.Path != "" && local.Path != "/") || local.RawQuery != "" || local.Fragment != "" {
+			return errors.New("Local hub address must be an HTTPS origin")
+		}
+	}
 	u, err := url.Parse(c.Address)
 	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
 		return errors.New("Use an HTTPS hub address, e.g. https://100.x.y.z:47603")
@@ -155,6 +163,7 @@ func newPinnedHubClient(c HubConfig) (*http.Client, error) {
 				}
 				return nil
 			}}}
+	transport.DialTLSContext = pinnedHubDial(c, transport.TLSClientConfig)
 	return &http.Client{Transport: transport, Timeout: 65 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}, nil
 }
 func hubRequest(ctx context.Context, cli *http.Client, c HubConfig, method, path, contentType string, body io.Reader) (*http.Response, error) {
@@ -230,6 +239,14 @@ func (b *HubBridge) session(ctx context.Context, c HubConfig) {
 		return
 	}
 	defer cli.CloseIdleConnections()
+	var connectWorkers sync.WaitGroup
+	if c.Connect && len(b.app.pcCertificate.Certificate) > 0 {
+		for i := 0; i < 4; i++ {
+			connectWorkers.Add(1)
+			go func() { defer connectWorkers.Done(); b.connectLoop(ctx, c) }()
+		}
+		defer connectWorkers.Wait()
+	}
 	// Validate presence promptly rather than waiting for the first empty 50s poll.
 	if response, e := hubRequest(ctx, cli, c, "GET", "/hub/v1/devices", "", nil); e == nil {
 		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 1<<20))
@@ -564,6 +581,8 @@ func (a *App) hubLocal(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(res.StatusCode)
 		io.Copy(w, io.LimitReader(res.Body, 1<<20))
+	case strings.HasPrefix(path, "/updates/"):
+		a.proxyHubUpdates(w, r, cli, c, path)
 	case strings.HasPrefix(path, "/cloud/"):
 		a.proxyHubCloud(w, r, cli, c, path)
 	case strings.HasPrefix(path, "/camera/"):

@@ -20,6 +20,7 @@ import (
 	hub "onespace.local/hub"
 	"onespace.local/hub/camera"
 	"onespace.local/hub/cloud"
+	"onespace.local/hub/updates"
 )
 
 func main() {
@@ -38,6 +39,7 @@ func run(args []string) error {
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	data := flags.String("data", "/var/lib/onespace-hub", "owner-only hub data directory")
 	listen := flags.String("listen", "127.0.0.1:47603", "explicit trusted LAN/overlay address:port")
+	allowPublic := flags.Bool("allow-public", false, "Explicitly allow Internet ingress; deploy firewall and rate limits before use")
 	upstream := flags.String("camera-upstream", "http://127.0.0.1:8889/camera/whep", "fixed loopback MediaMTX WHEP endpoint")
 	mediaAPI := flags.String("recording-api", "http://127.0.0.1:9997", "fixed loopback MediaMTX API origin")
 	clientFile := flags.String("oauth-client", "", "Google OAuth Desktop client JSON for local sign-in")
@@ -46,7 +48,7 @@ func run(args []string) error {
 	id := flags.String("id", "", "stable device id; never replace an existing id")
 	name := flags.String("name", "", "device display name")
 	kind := flags.String("kind", "", "windows, android, or linux")
-	scopes := flags.String("scopes", "", "explicit comma-separated clipboard,media,camera,cloud,recording scopes")
+	scopes := flags.String("scopes", "", "explicit comma-separated clipboard,media,camera,cloud,recording,connect,updates,updates.publish scopes")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -124,6 +126,10 @@ func run(args []string) error {
 		storage.Register(h.Mux(), func(r *http.Request, scope string) (string, bool) { d, ok := h.Authorize(r, scope); return d.ID, ok })
 		defer storage.Close()
 
+		_, err = updates.Register(h.Mux(), filepath.Join(*data, "updates"), func(r *http.Request, scope string) bool { _, ok := h.Authorize(r, scope); return ok })
+		if err != nil {
+			return err
+		}
 		h.SetRecordingStatus(storage.RecordingEnabled)
 		gateway, err := camera.Register(h.Mux(), camera.Config{Upstream: *upstream, Recording: storage.RecordingEnabled}, func(r *http.Request) (string, bool) {
 			if r.RemoteAddr == "" {
@@ -139,7 +145,9 @@ func run(args []string) error {
 		defer gateway.Close()
 		server := &http.Server{Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 60 * time.Second, WriteTimeout: 70 * time.Second, IdleTimeout: 80 * time.Second, MaxHeaderBytes: 16 << 10, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{cert}}}
 		errorsCh := make(chan error, 1)
-		go func() { errorsCh <- server.Serve(tls.NewListener(privateListener{listener}, server.TLSConfig)) }()
+		go func() {
+			errorsCh <- server.Serve(tls.NewListener(&ingressListener{Listener: listener, allowPublic: *allowPublic}, server.TLSConfig))
+		}()
 		log.Printf("OneSpace Hub %s listening on %s; Drive recording is opt-in", hub.Version, listener.Addr())
 		log.Printf("Verify hub certificate SHA-256 locally: %s", fingerprint)
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

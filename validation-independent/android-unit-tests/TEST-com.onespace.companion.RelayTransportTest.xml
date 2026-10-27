@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.onespace.companion.RelayTransportTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:50.370Z" hostname="9e7e9515a7db" time="4.551">
+  <properties/>
+  <testcase name="innerPCIdentityAndBearerSurviveHubRelay" classname="com.onespace.companion.RelayTransportTest" time="1.366"/>
+  <testcase name="wrongPCIdentityIsRejectedEvenThroughTrustedHub" classname="com.onespace.companion.RelayTransportTest" time="1.063"/>
+  <testcase name="unavailableLocalHubFallsBackToPublicAddress" classname="com.onespace.companion.RelayTransportTest" time="1.086"/>
+  <testcase name="wrongHubIdentityIsRejected" classname="com.onespace.companion.RelayTransportTest" time="1.036"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

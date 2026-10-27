@@ -10,11 +10,12 @@ Type=simple
 User=onespace-hub
 Group=onespace-hub
 WorkingDirectory=/var/lib/onespace-hub
+Environment=ONESPACE_ALLOW_PUBLIC=false
 Environment=ONESPACE_LISTEN=127.0.0.1:47603
 Environment=ONESPACE_CAMERA_UPSTREAM=http://127.0.0.1:8889/camera/whep
 Environment=ONESPACE_RECORDING_API=http://127.0.0.1:9997
 EnvironmentFile=-/etc/onespace-hub/hub.env
-ExecStart=/opt/onespace-hub/bin/onespace-hub serve --data /var/lib/onespace-hub --listen ${ONESPACE_LISTEN} --camera-upstream ${ONESPACE_CAMERA_UPSTREAM} --recording-api ${ONESPACE_RECORDING_API}
+ExecStart=/opt/onespace-hub/bin/onespace-hub serve --data /var/lib/onespace-hub --listen ${ONESPACE_LISTEN} --camera-upstream ${ONESPACE_CAMERA_UPSTREAM} --recording-api ${ONESPACE_RECORDING_API} --allow-public=${ONESPACE_ALLOW_PUBLIC}
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20

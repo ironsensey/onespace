@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.onespace.companion.RouteCandidatesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-27T11:51:54.923Z" hostname="9e7e9515a7db" time="0.003">
+  <properties/>
+  <testcase name="verifiedLocalWinsWithoutRemoteProbe" classname="com.onespace.companion.RouteCandidatesTest" time="0.002"/>
+  <testcase name="unreachableOrWrongIdentityLocalFallsBackOnlyAfterVerification" classname="com.onespace.companion.RouteCandidatesTest" time="0.001"/>
+  <testcase name="duplicateAndEmptyRoutesAreNotProbedTwice" classname="com.onespace.companion.RouteCandidatesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

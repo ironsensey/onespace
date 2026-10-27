@@ -1,94 +1,78 @@
-# v0.8.0 Drive Recording Preview validation
+# v0.9.0 Independent Preview validation
 
-Run on the cloud Linux x64 workspace on 26 October 2026. This is a tested
-preview package, not a release certified on the user's devices or account.
-Evidence is under `validation-drive/`.
+Validated in the Linux cloud workspace on 27 October 2026. This is a tested
+preview, not a release certified on the user's physical devices or Google account.
+Current evidence is in validation-independent/; older evidence is archived.
 
-## Passed
+## Passed here
 
-- **68 Go test cases, including subtests**: 34 hub/camera/cloud and 34 desktop/
-  clipboard cases. `go test -race -count=1` passed; no test failures or skipped
-  test cases. The hub CLI package has no unit tests and is exercised by the
-  separate CLI integration smoke test.
-- Cloud tests cover scope checks, upload ownership, stale offsets, an expired
-  session, recovery after a lost final response without duplicate files,
-  managed-folder boundaries, temporary/permanent retention, indexed expiry-day
-  queries, metadata rollback, segment completion, recording pause/resume, and
-  preserving local footage when remote checksum verification fails.
-- Google sign-in tests check PKCE/offline/minimal-scope URL policy, reject wrong
-  callback state, avoid saving cancelled authorization, serialize concurrent
-  refresh requests, and enforce owner-only saved credential permissions.
-- Permission upgrades preserve existing hub tokens; revoked devices cannot be
-  revived by changing scope flags. Desktop proxy tests verify pinned bearer
-  authentication, chunk bytes/offset headers, upstream error status, bounded
-  requests and route/query restrictions.
-- **Actual MediaMTX v1.21.2 Linux x64 recording integration** passed. Its archive
-  SHA256 matched the upstream checksum manifest. FFmpeg published a synthetic
-  320×240 H.264 stream in real time; the hub enabled recording via the real API;
-  MediaMTX finalized two MP4 segments; the native completion hook marked them;
-  ffprobe verified H.264 playback; the Drive fixture accepted their contents;
-  verified remote checksum/metadata allowed local cleanup. This is not a CSI
-  camera, Google account, Pi throughput, or WebRTC media test.
-- The full provided MediaMTX recording example was parsed and successfully
-  started with temporary loopback test ports using the real upstream binary.
-- Hub CLI/TLS/signaling integration passed: local enrollment, credential hashing,
-  exact pin rejection, authorization, queue/ACK/idempotency, response bounds,
-  restart persistence and revocation. The final static binary also passed this
-  smoke test. A run with the real media-event expiry wait passed during this
-  change; Go expiry tests also pass. See JSON evidence for exact grouped checks.
-- Four desktop/hub integration groups passed on Linux: protected local settings,
-  pinned registry proxying, outbound queue delivery, inbound durable receipt/ACK.
-  Its clipboard adapter is a stub; this does not prove physical Windows paste.
-- **Android debug and release assembly passed**, versionName `0.8.0-preview`,
-  validation versionCode **19**, application ID `com.onespace.companion`.
-- **12 Android JVM tests passed**. Both lint variants report **0 errors and
-  39 warnings**. Warnings include hardcoded/localization strings, deprecated
-  platform calls and existing security/API/resource checks. See full reports;
-  zero errors is not zero warnings. No Android instrumentation tests were run.
-- `go vet ./...` passed for both modules. Bundled dashboard JS syntax, unique DOM
-  IDs, and deployment shell syntax passed. Windows x64 GUI and Linux ARM64/x64
-  hub binaries were built; hub binaries use no cgo.
-- Seven existing identity, profile, update/signing-check and token-protection
-  source implementations remain byte-for-byte unchanged from the prior preview.
-  The new Android activity is non-exported; no original app ID or signer was
-  replaced. Files and pairing data from the old preview were not migrated or
-  overwritten in the original source folder.
+- **82 Go test cases including subtests**: 42 hub/camera/cloud/update and 40
+  desktop/clipboard cases, with the race detector; no failed or skipped cases.
+  Desktop clipboard integration uses Linux stubs, not physical Windows paste.
+- Relay coverage: missing scope/offline/self target, bounded connection slots,
+  real nested TLS with an independent PC certificate, revocation, malformed
+  upgrade rejection and shutdown. Shared code allocation covers concurrent
+  reservations, restart persistence and rejection of corrupted counters.
+- Update store covers publisher-vs-reader authorization, malformed APKs,
+  monotonic publication, actual bytes/hash/manifest, restart and corrupt metadata.
+- Native backend covers note/task/file lifecycle, permissions/validation through
+  the original handlers, credential masking, retention of pagination cursors,
+  and cancellation without partial-file persistence or source-file deletion.
+- **Actual MediaMTX v1.21.2 Linux x64 recording integration** passed, with a
+  synthetic FFmpeg H.264 publisher, completed playable MP4 segments, the actual
+  completion hook, a fake Drive service and checksum-verified local cleanup.
+  This does not test the Pi's physical CSI camera or Google account.
+- **19 Android JVM tests passed**, including real OkHttp/nested TLS fixtures:
+  original PC identity and bearer authentication survive the relay; wrong Pi
+  and PC identities are rejected; an unavailable LAN Pi address falls back.
+  This is JVM TLS, not Android Conscrypt/lifecycle/instrumentation testing.
+- Android **debug and unsigned release assembly passed**, versionName
+  `0.9.0-preview`, APK versionCode **28**, package `com.onespace.companion`.
+  Both lint variants have **0 errors and 41 warnings**. Full reports are included.
+- Source version metadata is advanced conservatively to floor 28/minimum 29
+  for future builds, preventing fresh source copies from building below the
+  bundled candidate. Update the floor again if the user's actual release is higher.
+- Actual hub + Linux desktop processes passed eight integration groups: inner
+  PC pin verification, denial without PC pairing, pairing approval, workspace/
+  item operations, PC permission enforcement, APK publication and duplicate-code
+  rejection, APK download with Windows stopped, and shared code reservation.
+- Actual Gradle packaging configuration (dry-run) and the Python helper reserved
+  increasing codes against a temporary pinned hub. No release key was used.
+- Packaged static hub CLI/TLS/signaling smoke passed ten groups, including a real
+  media-event expiry wait and durable purge. The timing in that fixture is not
+  measured PC-to-phone latency.
+- Embedded video JavaScript passed mocked connection/stop and Go-RPC arity/proof
+  checks. This is not real WebRTC playback or a native Windows UI test.
+- Windows GUI x64 and Linux ARM64/x64 binaries cross-compiled. Windows-targeted
+  and hub go vet passed. Windows clipboard memory copying uses RtlMoveMemory,
+  avoiding the former foreign-address-to-Go-pointer vet warnings.
+- Camera/install shell syntax and Python test/helper syntax passed. Both MediaMTX
+  ARM64 and amd64 archives matched the official upstream checksum manifest;
+  the ARM64 binary and redistribution licence are packaged.
 
-## Performance evidence and limits
+## Blocked or still requires real setup
 
-`upload-benchmark.txt` measures a bounded 1 MiB upload through the local Go/
-HTTP/JSON/metadata test fixture. It includes fixture allocations and local disk
-saves. It is a development regression baseline, **not** measured Google Drive
-speed, Pi RAM usage, phone battery improvement, or Internet latency. The hub
-smoke JSON contains a local enqueue-to-poll timing; it is not a Windows-to-phone
-hardware latency promise.
+- **Dependency vulnerability scanning did not complete**: this environment's
+  Go vulnerability database request returned Forbidden. No clean-security-scan
+  claim is made. The branch-limited GitHub Actions job provides a permitted-network
+  check, but its actual results must be inspected separately.
+- Real Windows native UI, file picker, OS clipboard, power/network/resume events,
+  WebView2 video playback and same-profile upgrade remain unrun here. A disposable
+  Windows clipboard test and UI Automation smoke script/workflow are included.
+- Real Android Conscrypt, WebView/WebRTC, document picker, background service,
+  metered consent, battery behavior and same-original-key in-place upgrade.
+- Public Pi endpoint/DNS/firewall/router setup. No public address or hosted relay
+  was created. Carrier NAT without another reachable endpoint remains a boundary.
+  No general-purpose ICE/STUN/TURN data connection engine is supplied.
+- Actual Google OAuth, quota, upload/resume, retention and Trash behavior. Google
+  API tests use local fixtures; no user's account or files were changed.
+- Actual Pi installation of the loop filesystem/systemd camera services,
+  permissions, OV5647 hardware, SD endurance, power, RSS/CPU/temperature,
+  simultaneous viewing/recording, network outages and reboot recovery.
+- The earlier undervoltage report still needs a physical supply/cable fix.
 
-Uploads and recording buffering have fixed limits, but the chosen Pi process
-memory budgets and actual sustained camera/upload throughput still need
-measurement. A nominal 5 Mbit/s camera needs upload bandwidth above its bitrate
-plus protocol/request overhead. Slow networks cause recording gaps once the
-bounded local buffer fills.
-
-## Still requires the user's setup/hardware
-
-- Complete Google OAuth on the user's own project/account and verify actual
-  quota, Drive policy, token lifetime, upload/resume, Trash and expiry behavior.
-  All Google API tests here use a local fake service; no user files were changed.
-- Install and test the optional 128 MiB loop filesystem and systemd dependencies
-  on Kali. The setup script was reviewed and syntax-checked; it was **not run**
-  against the cloud host or the Pi. Real MediaMTX tests use a disposable test
-  directory; hard mount checks are simulated in controller unit tests.
-- Test the physical Pi's CSI/OV5647 pipeline, SD endurance, power stability,
-  simultaneous live viewing/recording, memory use and network outage recovery.
-  The previous `0x50005` power report still requires a physical supply/cable fix.
-- Test WebRTC/ICE over the real LAN/overlay; native Windows clipboard listener,
-  DPAPI and media keys; and Android WebView/lifecycle/foreground battery behavior.
-- Verify the new Android cloud screen on a physical phone, including document
-  picker grants, metered consent, pause/resume and device-unlock behavior.
-- Build/sign Android with the original release key and a code above the actual
-  installed/published maximum; test an in-place upgrade while retaining data.
-  The validation debug signer differs from the user's original key; the release
-  assembly is unsigned. Neither APK is bundled as a drop-in update.
-
-No zero-bug guarantee or release-ready claim is made. The original upload and
-previous packages remain available as rollback material.
+The Windows executable is unsigned developer code. The bundled Android release
+APK is UNSIGNED and needs the user's original key before installation. Debug
+validation APKs are not bundled as upgrades. No signing key, user credential or
+pairing profile was distributed. Original test branch/package remain separate;
+Android rollback needs the same signer and a higher code, not a simple downgrade.

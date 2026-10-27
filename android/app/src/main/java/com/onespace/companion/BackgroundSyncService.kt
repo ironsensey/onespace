@@ -194,7 +194,7 @@ class BackgroundSyncService : Service() {
                     if (id > baseline && cameraDirectory && !uploaded.contains(id.toString())) {
                         val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                         val started = SystemClock.elapsedRealtime()
-                        OneSpaceApi(PcRoute.host(this, store), store.fingerprint(), store.token()) { PcRoute.recover(this, store) }
+                        PcRoute.api(this, store)
                             .upload(contentResolver, uri, name, false, true)
                         android.util.Log.i("OneSpace", "Camera delivery completed in ${SystemClock.elapsedRealtime() - started}ms")
                         uploaded.add(id.toString())
@@ -266,7 +266,7 @@ class BackgroundSyncService : Service() {
 
     private val activeClients = java.util.concurrent.ConcurrentHashMap<String, OneSpaceApi>()
     private fun fetchInbox(waitSeconds: Int, lane: String) {
-        val client = OneSpaceApi(PcRoute.host(this, store), store.fingerprint(), store.token()) { PcRoute.recover(this, store) }
+        val client = PcRoute.api(this, store)
         activeClients[lane] = client
         try { InboxDelivery.fetch(this, client, waitSeconds, if (lane == "files" && !settings.get("inbox")) "images" else lane) { running && !stopping } }
         finally { activeClients.remove(lane, client) }

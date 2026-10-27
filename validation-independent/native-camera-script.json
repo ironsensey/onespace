@@ -1,0 +1,1 @@
+{"status":"passed","checks":["video script connects and stops","Go RPC argument contracts match","per-viewer proof accompanies every RPC"],"limits":"mock WebRTC; no actual video or native Windows runtime"}

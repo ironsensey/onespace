@@ -47,7 +47,8 @@ func GetImagePNG() ([]byte, error) {
 			return errors.New("DIB too large or incomplete")
 		}
 		// Copy while the clipboard is locked; expensive conversion happens after CloseClipboard.
-		dib = append([]byte(nil), unsafe.Slice((*byte)(unsafe.Pointer(ptr)), int(size))...)
+		dib = make([]byte, int(size))
+		copyMemory.Call(uintptr(unsafe.Pointer(&dib[0])), ptr, size)
 		return nil
 	})
 	if err != nil {

@@ -67,8 +67,10 @@ func openBrowser(url string) {
 	}
 }
 func main() {
+	cameraUI := flag.Bool("camera-ui", false, "Open the isolated built-in camera player")
 	root := flag.String("data", "", "Data directory (default user configuration directory)")
-	nativeUI := flag.Bool("native-ui", false, "Open the native Windows dashboard preview")
+	nativeUI := flag.Bool("native-ui", true, "Open the native Windows dashboard preview")
+	legacyUI := flag.Bool("legacy-ui", false, "Open the previous browser dashboard instead of the native UI")
 	noBrowser := flag.Bool("no-browser", false, "Do not open dashboard automatically")
 	flag.Parse()
 	if *root == "" {
@@ -82,6 +84,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if *cameraUI {
+		if err := openNativeCamera(newApp(s, "")); err != nil {
+			log.Print(err)
+			showNativeError(err.Error())
+		}
+		return
+	}
 	profileLog, err := configureProfileLog(*root)
 	if err != nil {
 		log.Fatal("Cannot open diagnostic log: ", err)
@@ -92,6 +101,7 @@ func main() {
 		log.Fatal("Cannot read/create secure device identity: ", err)
 	}
 	app := newApp(s, fingerprint)
+	app.pcCertificate = cert
 	localListener, err := net.Listen("tcp", "127.0.0.1:47600")
 	if err != nil {
 		log.Fatal("Local dashboard port 47600 unavailable: ", err)
@@ -132,6 +142,12 @@ func main() {
 	clipStop := make(chan struct{})
 	go app.startClipboardMonitor(clipStop)
 	go app.hub.Run(discoveryCtx)
+	go watchNetworkChanges(discoveryCtx, func() {
+		select {
+		case app.hub.changed <- struct{}{}:
+		default:
+		}
+	})
 	go func() {
 		t := time.NewTicker(time.Hour)
 		defer t.Stop()
@@ -143,8 +159,10 @@ func main() {
 	fmt.Println("Dashboard: http://127.0.0.1:47600")
 	fmt.Println("LAN endpoint: port 47601 (encrypted)")
 	fmt.Println("Fingerprint SHA-256: " + fingerprint)
-	if *nativeUI {
+	uiDone := make(chan struct{})
+	if *nativeUI && !*legacyUI && !*noBrowser {
 		go func() {
+			defer close(uiDone)
 			if err := openNativeDashboard(app); err != nil {
 				log.Printf("Native dashboard: %v", err)
 			}
@@ -154,7 +172,10 @@ func main() {
 	}
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
-	<-ch
+	select {
+	case <-ch:
+	case <-uiDone:
+	}
 	fmt.Println("Stopping OneSpace")
 	cancelDiscovery()
 	close(clipStop)

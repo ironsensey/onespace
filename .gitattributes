@@ -1,0 +1,2 @@
+# Keep distribution checksums identical across clones and ZIPs on every OS.
+* -text

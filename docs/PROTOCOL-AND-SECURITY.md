@@ -72,3 +72,54 @@ Android 10+ background clipboard restrictions, service lifecycle limits, battery
 The supplied automated checks exercise local server protocols, negative authorization cases and pure policy logic. Linux clipboard stubs cannot validate Windows clipboard behavior. A fake WHEP upstream can validate signaling routing and ownership checks, not real camera encoding, ICE connectivity, delivered FPS or Android WebView decoding. Pi ARM64 compilation does not demonstrate execution on the physical Pi.
 
 Before treating the build as a stable deployment, test the actual Pi power health, camera pipeline, overlays on different networks, native Windows clipboard/media execution, Android background behavior, same-key APK upgrades and disconnect/revocation recovery. No zero-bug, zero-latency or measured battery-improvement claim is made.
+
+## v0.9.0 OneSpace Connect and Pi update service
+
+The built-in PC relay requires no VPN application. It uses HTTP/1.1 Upgrade
+inside exact-pinned hub TLS, then carries the original independently pinned PC
+TLS connection. No new cryptographic algorithm or unauthenticated arbitrary-host
+proxy is introduced. The Pi cannot read the PC password, bearer token or file
+contents in that inner connection. The existing short hub-text queue remains a
+separate trusted-Pi plaintext queue; do not confuse its security properties.
+
+- POST /hub/v1/connect/listen registers an outbound receiving connection.
+- POST /hub/v1/connect/open?to=DEVICE selects an enrolled receiver, never an IP.
+- Both sides require connect scope. Requests need bodyless HTTP/1.1, Connection:
+  Upgrade and Upgrade: onespace-connect-v1. Success returns 101.
+- A receiver waits for a single byte 0x01 before starting its PC TLS server.
+  The sender immediately starts its PC TLS client after its 101 response.
+- At most 10 sockets per device and 32 total. Receivers expire after 15 minutes;
+  active pairs expire after one hour and have sliding 90-second I/O limits.
+- Revocation/scope removal is rechecked every second; closing the hub closes
+  its hijacked connections. Relay buffers are bounded, without file staging.
+- Windows uses four workers and kernel network/address-change notifications.
+  Normal shutdown, profile changes and resume rebuild outbound connections.
+- Android selects and verifies a route before writes. OkHttp retries and
+  redirects are disabled. An uncertain POST/upload is not automatically replayed.
+  A connection failure invalidates its route cache; reads may recover safely.
+- The Pi remains private-ingress-only unless --allow-public is explicitly set.
+  Opt-in public ingress has 128 total sockets and 16 per IP, before TLS. Firewall
+  and public reachability remain deployment responsibilities. No hosted relay,
+  automatic router configuration, STUN/TURN service or NAT guarantee is supplied.
+
+Pi updates: GET /hub/v1/updates/manifest and /apk require updates scope.
+PUT /hub/v1/updates/apk and POST /hub/v1/updates/reserve require updates.publish.
+APKs are capped at 150 MiB. Package/version metadata is parsed from compiled
+AndroidManifest.xml; bytes are SHA-256 hashed. Publication is atomic and rejects
+codes <= the current release. This publisher does not verify the APK signature;
+only trusted publishers may submit. Android still compares the archive signer
+to its installed signer and requires the OS installer's final approval.
+The manifest retains the existing /v1/update/apk downloadPath contract; Android's
+selected transport maps it to the fixed hub endpoint rather than trusting a URL.
+
+The shared version counter is serialized, fsynced and monotonic across restart.
+Use one authority and the actual published floor on all builders. Local counters
+alone do not coordinate multiple independent release machines.
+
+The native Windows UI retains the authenticated local handlers in-process.
+The video component is isolated in a child process, uses fixed local content,
+denies browser permissions, blocks external web resources, and requires a
+per-viewer random proof for camera RPC. Hub tokens never enter its document.
+The locally vendored WebView2 wrapper adds only a constructor configuration hook;
+its upstream licences and loader notices are retained. Native UI/device execution
+and deployment security checks are still required before a production release.

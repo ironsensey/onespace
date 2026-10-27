@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "checks": [
+    "actual PC TLS identity verified through actual hub reverse relay",
+    "hub enrollment alone cannot bypass PC pairing",
+    "existing PC pairing and local approval work through relay",
+    "workspace and item transfer use unchanged PC protocol through relay",
+    "PC permissions remain enforced inside relay",
+    "desktop streams APK to Pi; duplicate version publication rejected",
+    "Pi serves verified APK bytes with Windows process off",
+    "shared code helper verifies Pi identity and allocates above published code"
+  ],
+  "limits": "Linux engine stubs; not physical Windows paste, Android lifecycle, Pi camera or public-network deployment"
+}

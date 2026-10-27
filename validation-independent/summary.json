@@ -1,0 +1,25 @@
+{
+  "hub": {
+    "pass": 42
+  },
+  "windows": {
+    "pass": 40
+  },
+  "android": {
+    "tests": 19,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint_debug": {
+    "Warning": 41
+  },
+  "lint_release": {
+    "Warning": 41
+  },
+  "android_apk": {
+    "versionCode": 28,
+    "versionName": "0.9.0-preview"
+  },
+  "security_scan": "blocked: Go vulnerability database access returned Forbidden"
+}
