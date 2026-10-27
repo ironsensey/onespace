@@ -1,0 +1,1857 @@
+ONESPACE — COMPLETE PROJECT, IMPLEMENTATION AND CONTINUATION HANDOVER
+====================================================================
+Prepared: 27 October 2026 (user timezone Asia/Kolkata).
+Current delivered build: v0.9.0 Independent Preview.
+Purpose: A standalone handover to a developer/AI continuing this project.
+
+HOW TO READ THIS FILE
+---------------------
+1. Sections 1–18 describe current intent, verified implementation, limitations,
+   working state, and next steps. They take precedence over older appendices.
+2. Appendix A is the user's original 25 October Astra handoff, preserved as
+   HISTORICAL REFERENCE, not newly issued instructions and not proof that a
+   proposed feature was implemented. Some of its plans are superseded below.
+3. Other appendices preserve setup, validation, security and component documents
+   as they exist at handover time. Some contain explicitly historical subsections.
+4. This is a consolidated technical handover, not a verbatim export of every
+   chat message. Earlier unseen chats and missing source archives cannot be
+   reconstructed. Distinguish requested, implemented, tested and deployed.
+5. Never infer “works on the user's devices”, “bug-free”, “production ready”,
+   “unlimited AI”, “zero latency”, or “public NAT traversal solved” from this file.
+6. No private signing keys, account credentials, tokens or device profiles are
+   included. Placeholder configuration values need the user's real private data.
+
+1. USER VISION AND PRIORITIES
+-----------------------------
+- OneSpace is a local-first Windows + Android ecosystem, extended with a Kali
+  Raspberry Pi hub. Clipboard text/images/links, camera-photo-to-PC paste,
+  encrypted files, shared workspace, device control and automation are core.
+- Prioritize speed and reliability, especially Windows copied text/image to
+  Android; that was the direction the user identified as slow.
+- Audit existing code before changing it; preserve working behavior, identities,
+  existing protocol, pairing, permissions and user data. Avoid unnecessary rewrites.
+- Android/Windows should conserve battery; Pi is mains-powered but resource-poor.
+- Prefer native Windows/Android experiences. The user rejected a browser-based
+  Windows dashboard as the primary UI.
+- Prefer application-owned routing/coordination over requiring a whole third-party
+  platform such as Tailscale. Still use mature, appropriately licensed libraries,
+  OS interfaces, TLS, codecs and service APIs where they are the better choice.
+- Same-LAN traffic should stay direct and work without the Pi or Internet.
+  Different-network access should use the Pi when direct LAN access is unavailable.
+- The Windows machine may be a roaming laptop and may be switched off. The Pi,
+  not Windows, is the always-on hub. Operations on an offline PC remain impossible.
+- Pi camera should provide live CCTV in OneSpace. Initially recording was deferred
+  because no SSD was available; user later explicitly requested recording after
+  deciding to use their 5 TB Google Drive account for large storage.
+- Provide temporary/permanent cloud storage, create/list/upload/delete (Trash)
+  management inside OneSpace, and recording uploads to connected Google Drive.
+- Keep update compatibility; automatic monotonic APK codes; avoid repeated false
+  update prompts. Never uninstall the existing app to hide a signing problem.
+- Add meaningful tests, logging and benchmarks. Report failures honestly.
+- User likes small clear points, practical instructions and comparison tables;
+  dislikes unsupported performance percentages and repeatedly asking permission.
+- Inspiration mentioned: Spotify cross-device play/pause, Xiaomi interconnectivity,
+  and Musixquare synchronization. No source/license adoption or measured equivalence
+  to these products is established. Media commands are not sample-accurate audio sync.
+- “Phydrop” appeared once in a component-comparison request; the implemented
+  project/repository/package identity remains OneSpace.
+
+2. SOURCE HISTORY AND PRESERVATION
+---------------------------------
+User supplied:
+- OneSpace-v0.6.1-Publish-Fix-Complete.zip
+  Uploaded reference: sediment://file_00000000c0d08211b33512ad9a24d75d
+- OneSpace_Next_Version_Complete_Astra_Handoff.txt (60,447 bytes)
+  Uploaded reference: sediment://file_00000000674881f58d0685bbf1cc75e9
+  Historical document included in Appendix A.
+
+Original user report: Android v0.6.1 versionCode 9, Windows v0.6.
+Audited/improved working baseline reached v0.6.2, then Pi/live preview v0.7.0,
+Drive/recording preview v0.8.0, then independent/native v0.9.0.
+Historical handoff mentions v0.11.1 and a v2/WinUI project. Those newer SOURCE
+archives were not available here. v0.9.0 is not a certification or merge of that
+missing source and must not overwrite a newer installed app with a lower code.
+VersionName order alone is not an Android upgrade compatibility check.
+
+Preserve:
+- Android applicationId: com.onespace.companion
+- Original Android signing keystore/alias/certificate continuity. Cloud workspace
+  did not receive the original key. Key rotation is not implemented.
+- Windows %AppData%\OneSpace or user's custom data folder; state.json,
+  identity.crt/identity.key, pairing and stored files.
+- Pi /var/lib/onespace-hub identity, device tokens, cloud and update state.
+- Existing PC HTTPS/update endpoints and pairing approval semantics.
+- Existing camera hardware pipeline until a replacement is measured better.
+
+Repository: https://github.com/ironsensey/onespace
+Current branch: dev/onespace-independent-connect
+Latest COMMITTED/PUSHED application state:
+  7d7a1fa61b6eb4bb987198665f9dcb339a52777c
+Prior dev increment: 0fe4364
+Preserved test branch: test/onespace-v0.8.0-drive-recording
+  commit 3343572154880c73d456133f522ba66db32c9d17
+Remote was originally empty; no main branch was established here.
+The earlier test branch/package was kept separate, not replaced.
+
+3. DELIVERABLES AND WHAT IS SIGNED
+--------------------------------
+Latest complete distributable:
+  /workspace/OneSpace-v0.9.0-Independent-Preview.zip
+  43,235,426 bytes, 283 archive entries/files as recorded at packaging.
+  SHA-256:
+  102bc7d3f00ddeeb39d875a2bc782ff2f0e1da2607d59acdda83f6400eaf5925
+Companion:
+  /workspace/OneSpace-v0.9.0-Independent-Preview.zip.sha256
+Extracted snapshot:
+  /workspace/OneSpace-v0.9.0-Independent-Preview/
+Contains source, Windows GUI x64, Linux hub ARM64/x64, official MediaMTX ARM64,
+unsigned Android release APK, setup, notices and validation evidence.
+ZIP CRC and 282 per-file SHA-256 entries were verified at packaging.
+.gitattributes uses * -text so checkout/archive line-ending conversion does not
+invalidate the packaged checksum manifest.
+
+Android candidate: versionName 0.9.0-preview, APK versionCode 28, UNSIGNED.
+Source android/version.properties: versionCode=29, publishedVersionCode=28.
+The floor was advanced conservatively to prevent future source builds below
+candidate 28. It does not assert that user actually published/installed code 28.
+Set floor above user's actual highest installed/published code if necessary.
+Unsigned APK must be signed using ORIGINAL KEY before compatible installation.
+Debug signer is not the user's signer; debug APK is not bundled as an upgrade.
+Windows EXE is unsigned developer code; not an installer-certified release.
+
+Old v0.8 ZIP, original /workspace/onespace-audit, and older packages remain.
+Current handover-only diagnostic edits are NOT inside the v0.9 ZIP.
+
+4. HARDWARE, COST AND OPERATING CONSTRAINTS
+-----------------------------------------
+- Raspberry Pi 3 Model B Rev 1.2, ~1.2 GHz class, 1 GB RAM, aarch64 Kali Linux.
+- Camera OV5647 CSI module. User's working GStreamer/libcamera hardware H.264
+  encoder pipeline, not generic ffmpeg /dev/video0 capture, is the baseline.
+- No SSD. Bounded SD buffer + Google Drive is the chosen recording compromise.
+- Historical RAM sample: total856MiB/available666MiB, no swap, CMA256MiB.
+- Historical camera load samples are not sustained performance benchmarks.
+- Historical Pi throttled=0x50005 indicated current/historical undervoltage and
+  CPU throttling. Fix supply/cable and remeasure; software cannot repair power.
+- Historical LAN addresses 192.168.0.106 Pi and .104 Windows were dynamic examples,
+  not values to hardcode. User wants automatic discovery when addresses change.
+- Windows cannot be left running all day due electricity cost.
+- User does not want a paid VPS, another computer, or an always-on PC for AI.
+- Pi can run lightweight hub/agent scheduling, not a capable unlimited local
+  coding LLM. No such AI service has been implemented in this project.
+
+5. IMPLEMENTED COMMUNICATION AND ROUTING
+----------------------------------------
+LAN baseline preserved:
+- Windows local legacy dashboard: loopback TCP47600, authenticated local API.
+  Primary dashboard is now native; -legacy-ui explicitly enables browser fallback.
+- Windows paired-device API: pinned HTTPS/TCP47601, original bearer credentials.
+- Existing LAN UDP discovery:47602; discovered identity must still be verified
+  against paired pin. Discovery is not trusted enrollment.
+- Pi scoped API: pinned HTTPS/TCP47603, optionally external443 forwarded to47603.
+- Route priority: verified local PC LAN -> optional existing approved overlay ->
+  discovery/reselection -> explicitly enabled OneSpace built-in Pi relay.
+- Direct LAN stays independent of Pi and Internet. Pi-only functionality requires Pi.
+
+Built-in OneSpace Connect (new):
+- No mandatory separate Tailscale application/account.
+- Windows makes outbound persistent receiver connections to Pi, so laptop may move.
+- POST /hub/v1/connect/listen registers a receiver.
+- POST /hub/v1/connect/open?to=DEVICE opens a connection to enrolled device ID.
+- Both require connect scope, bodyless HTTP/1.1 Upgrade,
+  Connection: Upgrade, Upgrade: onespace-connect-v1, successful status101.
+- Receiver waits for byte0x01, then acts as original PC TLS server.
+- Original PC TLS session is carried INSIDE pinned Pi TLS. Android verifies PC
+  separately and sends original PC token/password only inside the inner TLS.
+- Pi forwards encrypted PC bytes and cannot read inner PC clipboard/files/password.
+  Pi can observe connection metadata and still terminates outer TLS.
+- Hub only joins enrolled receivers; never opens arbitrary client-supplied URLs/IPs.
+- Four Windows reverse workers; LIFO receivers favor fresh connections.
+-10 sockets/device,32 total; idle receiver15min; activepair1h; slidingI/O90sec.
+-32KiB bounded copy buffers per direction, no whole-file Pi staging.
+- Revocation/scope removal checked every second; hub shutdown closes connections.
+- Windows uses OS interface/address change notifications +500ms debounce,
+  and resume notifications; no continuous IP-address polling loop.
+- Windows private Pi address preflight800ms, remote4sec, local failure cooldown30sec.
+- Android route cache30sec keyed to identity/network/profile, failure invalidation.
+- Never replay an uncertain modifying request through another route automatically.
+
+Other Pi event route:
+- Event-woken long polling for short clipboard text and media commands.
+- Separate trusted-Pi queue, NOT inner-PC end-to-end encryption.
+- Pi can read/store queued text until acknowledged/expired/purged.
+- Shared queue256; server text64KiB, client policy16KiB; enrolled devices128.
+- Clipboard60sec expiry, media15sec, sweep5sec; explicit recipient ACK.
+- New pending text same sender/recipient replaces older pending text.
+- Stable IDs/idempotency reduce duplicates, but no exactly-once OS-action promise.
+- Windows default copied-text route remains lan (original PC API), which may run
+  through encrypted Pi connection. Explicit hub route is a different trust choice.
+
+Reachability boundary:
+- This is NOT a general ICE/STUN/TURN data transport or a hosted public relay.
+- Pi must be reachable from both networks: publicIPv6 or publicIPv4+portforward/DNS,
+  or another separately provisioned reachable endpoint.
+- CGNAT cannot be fixed merely by installing this app. No endpoint was provisioned.
+- Pi private ingress default. Explicit --allow-public / ONESPACE_ALLOW_PUBLIC=true
+  needed for public clients.128 total/16-per-IP ingress caps before TLS.
+- Never publicly expose Windows47601. Keep scope/auth/firewall restrictions.
+- Optional Pi LAN address shares same certificate pin, avoiding hairpin NAT issues.
+- Tailscale/WireGuard remains optional compatibility, not bundled/required.
+
+6. ANDROID IMPLEMENTATION AND REAL BACKGROUND LIMITS
+---------------------------------------------------
+- Kotlin existing app retained; OkHttp4.12.0/Okio3.6.0 replaces the PC request
+  transport with pooling/streaming, exact PC certificate/date verification.
+- Bounded8 client identities; no redirects or retryOnConnectionFailure.
+- Custom SocketFactory carries inner PC TLS over HubTunnel's outer pinned TLS.
+- Socket options include cached TCP_NODELAY, keepalive and timeouts.
+- JSON cap1MiB; preflight16KiB; upload streaming64KiB chunks, original512MiB PC cap.
+- HubApi retains pin cache and Android Keystore protected hub profile.
+- PcRoute performs verified LAN selection/discovery and optional Pi fallback.
+- Existing PC pairing retained. New remote pairing via Pi still needs actual
+  PC fingerprint/password and local Windows approval, not just hub enrollment.
+- Android UI adds Pi remote/local addresses, built-in fallback, connection test,
+  Pi update-source choice and existing cloud/camera controls.
+- Pi-only update access does not require the laptop online.
+- Metered/battery/background consent retained; file uploads foreground/cancellable.
+- Android10+ background clipboard reading is restricted. A persistent service is
+  not a universal bypass. Foreground/share/allowed workflows and clear receive
+  state are required; user may need to open/unlock OneSpace to activate paste.
+- Force-stop/vendor battery restrictions can interrupt work. No guaranteed
+  invisible indefinite clipboard/photo sync or silent APK installation is claimed.
+- Repeated updates are limited by version comparison/source/hash/signer checks;
+  real installed-version update-prompt lifecycle still requires device testing.
+- Premium full Compose redesign/advanced widgets are historical goals, not a
+  claim that every requested UX component has been newly completed.
+
+7. WINDOWS NATIVE EXPERIENCE
+----------------------------
+- Default main UI now uses native Win32 controls; not a WinUI3/C# redesign.
+- Native pages: Home, Devices/pairing/permissions, files/text/import/pin/delete,
+  tasks/notes, Pi connection, Drive list/upload/resume/retention/Trash/recording,
+  cloud notes, media controls, updates/sharedcodes, startup/volume/power settings.
+- Existing authenticated local handlers reused in-process. Original per-device
+  policy still applies to actual remote operations.
+- Simple forms and ID-based lists; useful functional controls, not the premium
+  glassmorphism cards/charts envisioned by the historical design.
+- Async action/cancel and output credential masking; public pagination cursor kept.
+- OS file picker. Headless -no-browser supported; -legacy-ui is explicit fallback.
+- Minimize keeps PC engine running. Closing dashboard stops PC engine. Pi remains.
+- Live camera opens isolated child process -camera-ui using in-app WebView2
+  video surface. Main dashboard does not require external browser.
+- WebView2 Runtime needed only for video; not silently installed or bundled.
+- Fixed localHTML, external resources blocked, browser permissions denied,
+  random per-viewer proof for camera RPC; hub tokens absent from JavaScript.
+- WebView wrapper is vendored with only constructor Configure callback patch,
+  documented in windows/third_party/go-webview2/ONESPACE-PATCH.md.
+- Three unsafe foreign clipboard copies changed to RtlMoveMemory, resolving
+  Windows-targeted vet warnings while preserving clipboard behavior.
+- Original PC pairing token storage remains profile/OS-permission protected;
+  newer hub token uses per-user DPAPI. Do not claim all old secrets encrypted.
+- Latest actual Windows CI tests/build passed, but native UI smoke FAILED;
+  see section14. Native UI must not be represented as fully validated.
+
+8. PI CAMERA AND LIVE STREAM
+---------------------------
+- Preserve working libcamera/GStreamer -> hardwareH264 -> localRTSP MediaMTX ->
+  WebRTC receiver. Avoid per-frame ffmpeg subprocesses, MJPEG re-encoding loops
+  and repeated camera capture restarts previously found slow.
+- Existing pipeline requests1344x1008 NV12 at46fps,5Mbps, BaselineLevel4,
+  leaky2-buffer, RTSP-over-TCP tolocalhost8554. Requested46fps is not measured FPS.
+- MediaMTX1.21.2, official ARM64 archive verified and binary included (~63MB).
+- WHEP SDP goes through authenticated hub to fixed loopbackupstream.
+- Live video uses WebRTC media encryption to MediaMTX, UDP8189 reachable viewers.
+- RTSP8554/WHEP8889/management9997 must stay loopback, not public interfaces.
+- WHEP session ownership/scope, fixedupstream/size/redirect controls; default2viewers,
+  one-hour session,15sec authorization revalidation. Crash cleanup not instantaneous.
+- Public HTTPS signaling working does not prove UDP video connectivity. No TURN
+  service provisioned. Cross-network camera behavior must be tested separately.
+- install-camera-services.sh takes trusted binary + reviewedconfig + optional
+  provenpublisher, checks plugins/groups, backs up, does not changefirmware or start.
+- Existing installed publisher preserved unless explicit replacement provided.
+- Managed systemd hub/media/camera. Stoppinghub stops dependent media services;
+  after maintenance start allthree, not onlyhub.
+
+9. DRIVE, RECORDING AND STORAGE
+-------------------------------
+- Google Drive uses the user's 5 TB account. Signing in with the Gmail identity
+  grants Drive access; no Gmail inbox-reading permission is requested.
+- Own Desktop OAuth client, PKCE, state-checked loopback callback, drive.file scope.
+  Headless Pi consent can use SSH callback forwarding. No real account was set up here.
+- Tokens and resumable URLs are protected owner-only metadata, never UI/log output.
+- Manage only OneSpace-marked files in the verified app folder, not unrelated files.
+- Temporary storage defaults to 7 days, configurable 1–365; permanent until deletion.
+  The original handoff's five-day maximum was a historical design. Confirm desired
+  policy before changing current retention behavior.
+- List, create, upload, resume and move to Trash in OneSpace. Trash normally keeps
+  quota occupied until Google's later purge (usually 30 days) or manual emptying.
+- Resumable uploads use 1 MiB chunks, fixed Google endpoints, strict session URL
+  checks and preallocated Drive IDs to reduce ambiguous-completion duplicates.
+- Existing H.264 stream produces roughly 15-second finalized fMP4 segments. Remote
+  MD5 is verified before local deletion; MD5 is an integrity check, not encryption.
+- “Direct to Drive” means a bounded local spool followed by verified upload. It
+  does not mean zero SD writes or unlimited recording during an Internet outage.
+- Recording spool: 128 MiB ext4 image on SD, not tmpfs/RAM; pause around 96 MiB or
+  below 8 MiB free. Keep at least 512 MiB free outside it. Outages can cause gaps.
+- 5 Mbps is about 54 GB/day; 5 TB about 92 days before other usage/Trash. Estimate.
+- Ordinary Google-readable files/MP4s, not an end-to-end encrypted cloud vault.
+- systemd memory ceilings: hub160 MiB, MediaMTX192 MiB, camera320 MiB. Ceilings
+  are not allocations or measured RSS. Real Pi memory/power/thermal tests remain.
+
+10. APK UPDATES AND MONOTONIC VERSION AUTHORITY
+----------------------------------------------
+- Original Windows update protocol retained; Pi hosts updates so PC may be off.
+- GET /hub/v1/updates/manifest and /apk require updates scope.
+- PUT /hub/v1/updates/apk and POST /hub/v1/updates/reserve require updates.publish.
+- Strict binary AndroidManifest parser, package allowlist, 150 MiB cap, streaming,
+  periodic sync every 4 MiB, SHA-256, immutable names and atomic manifest.
+- Reject code <= published release; refuse corrupt metadata overwrite; clean old
+  APK only after successful publication. Publisher does NOT verify APK signature.
+- Android verifies bytes/hash/size/package/code and installed signer continuity;
+  the OS installer independently verifies and requires user approval.
+- Manifest keeps /v1/update/apk downloadPath; adapter maps to the fixed hub route.
+- Shared counter is serialized, file-locked, durable and monotonic over restart.
+  Maximum code 2.1 billion. Failed builds may leave gaps; never reuse reservations.
+- Local counters coordinate only one machine. Multiple builders need ONE authority.
+- Optional Gradle environment, kept private:
+  ONESPACE_SHARED_VERSION_CODES=true
+  ONESPACE_HUB_URL=https://YOUR_PI:47603
+  ONESPACE_HUB_FINGERPRINT=VERIFIED_64_HEX_PIN
+  ONESPACE_HUB_TOKEN=PRIVATE_PUBLISHER_TOKEN
+- Explicit assemble/bundle/install reserves; IDE sync does not. An unavailable
+  authority fails rather than silently falling back to an uncoordinated counter.
+- tools/reserve-android-version.py provides pinned allocation and a build helper.
+  Already reserved code: -PonespaceVersionCode=N avoids a second allocation.
+- Data-preserving rollback: older source + same key + NEW higher code, not downgrade.
+
+11. AI AGENT DISCUSSION — REQUESTED, NOT BUILT
+----------------------------------------------
+User wants an AI that watches health/security, takes a reported bug, edits code,
+tests, pushes fixes and provides app updates. Gemini and agent hosting were discussed.
+The user has consumer Gemini Pro and wants no paid VPS or always-on PC electricity.
+- Gemini is the model; an agent is a runner with tools that invokes the model and
+  executes repository actions. Usually the model is accessed through an API.
+- A consumer chat subscription does not automatically include unlimited API quota.
+- No reliable free/unlimited API or compute promise. Providers have limits and terms.
+- Pi 3 can run lightweight scheduling/health collection, not a capable coding LLM
+  or comfortable full Windows/Android build farm.
+- Hosted CI could run triggered work within real account quotas. No autonomous
+  patching agent, Gemini integration or deployment pipeline was implemented here.
+- Suggested future workflow: redacted bug report -> isolated branch -> agent patch
+  -> tests/security review -> human review -> original-key signed release.
+- Never give an agent unrestricted production secrets or treat received network
+  content as trusted coding instructions. Runtime health checks are separate from
+  repeatedly sending all communication to an LLM.
+- No Gemini API key or self-modifying production/security daemon was deployed.
+
+12. SERVICES AND OWNERSHIP DECISIONS
+------------------------------------
+Keep established components: Google Drive API/OAuth, OS network/power events,
+TLS/HTTPS, Android Keystore, Windows DPAPI, OkHttp/Okio, MediaMTX, GStreamer,
+libcamera, hardware H.264 and WebView2 for video only.
+Own in OneSpace: pairing, permissions, LAN routing, Pi broker, event delivery,
+update publication/version allocation, UI and storage coordination.
+Optional: Tailscale/WireGuard compatibility; not a prerequisite for built-in relay.
+Not built: full VPN platform, universal NAT traversal, custom crypto/codecs,
+sample-accurate audio sync, premium WinUI3 rewrite or autonomous AI.
+No measured latency/resource percentage comparison exists. Do not invent savings.
+Wide adoption and open-source licensing do not guarantee perpetual availability.
+Appendix F contains the version and licence inventory.
+
+13. AUTOMATED VALIDATION BEFORE THE LINKED ACTIONS RUN
+-----------------------------------------------------
+- 82 Go cases including subtests with race detector: 42 hub/camera/cloud/update,
+  40 desktop/clipboard Linux-stub cases; no failures/skips in that recorded run.
+- 19 Android JVM tests: nested TLS/OkHttp, independent PC/hub certs, wrong-pin
+  rejection and unavailable Pi LAN fallback. Not Android Conscrypt/instrumentation.
+- Android debug and unsigned release assembled code28; lint0 errors/41 warnings.
+- Actual hub + Linux desktop integration: eight groups covering pairing approval,
+  inner PC identity, credentials/permissions, notes/items, APK publication/rejected
+  duplicate, APK download with PC off, shared allocation.
+- Actual Gradle dry-run and Python helper reserved increasing codes against a
+  temporary pinned hub. No original signing key used.
+- Packaged hub smoke: ten groups including real 15-second media expiry/purge.
+- Real MediaMTX1.21.2 amd64 with synthetic FFmpeg H.264: playable recording,
+  completion hook and fake-Drive verified cleanup. Not physical camera/Google.
+- Video JavaScript mocked connect/stop and Go RPC proof/arity passed; not live video.
+- Windows x64 GUI and Linux ARM64/x64 cross-builds, Windows-target/hub vet passed.
+- Shell/Python syntax, official MediaMTX hashes, ZIP CRC/per-file SHA checks passed.
+- Local vulnerability DB access was Forbidden. Later GitHub security job PASSED
+  (section14); that supersedes only the earlier “CI status unknown” statement.
+- No physical-device latency/battery/RSS benchmark completed. No zero-delay claim.
+
+14. CURRENT GITHUB ACTIONS FAILURE — IMPORTANT OPEN ISSUE
+---------------------------------------------------------
+Run: https://github.com/ironsensey/onespace/actions/runs/40502422353
+Commit: 7d7a1fa61b6eb4bb987198665f9dcb339a52777c
+Workflow: .github/workflows/independent-validation.yml
+Observed from public run/job HTML on 27 October 2026:
+- Overall FAILURE.
+- security job122183137355 PASSED.
+- windows job122183137036 FAILED.
+- Windows checkout, setup Go, go test -race -p 1 ./... and GUI build all PASSED.
+- Failure at step6: ./tools/Test-NativeWindows.ps1 -Executable ./OneSpace.exe
+- Historical step time: 12:17:48–12:17:57 UTC (17:47:48–17:47:57 Asia/Kolkata).
+- Public annotation says only “Process completed with exit code 1”.
+- Logs require signed-in GitHub access; gh/API requests returned Forbidden here.
+  Public HTML could be read. Exact red PowerShell error is not yet available.
+- Asked user to paste the error and nearby lines; no answer by handover time.
+- Node20 deprecation warnings for checkout@v4/setup-go@v5 also reported.
+  Ubuntu-latest migration notice is not the cause of the failure.
+
+Do NOT say the root cause is fixed. The test has fixed 800 ms waits; timing is a
+possibility, not a confirmed diagnosis. Inspect UI Automation selection/value/
+invoke patterns, chosen window, startup readiness, note JSON and shutdown once
+actual logs are available. Test opens a disposable profile, selects Notes, fills
+fields201/202, saves, checks state.json, closes window and verifies process exit.
+Clipboard tests were enabled in the successful Windows Go step with
+ONESPACE_WINDOWS_CLIPBOARD_TEST=1; actual user's paste workflows still need testing.
+
+UNCOMMITTED LOCAL DIAGNOSTIC EDITS AFTER THAT RUN:
+1. Workflow: checkout@v4 -> @v5 and setup-go@v5 -> @v6 for both jobs. Tags exist
+   upstream; these changes have not yet executed in CI.
+2. PowerShell test: catch writes escaped exact exception as GitHub ::error
+   annotation and optional GITHUB_STEP_SUMMARY with script stack; rethrows.
+   No profile/secret dump; finally cleanup retained.
+- git diff --check passed. No PowerShell installed here for Windows UI execution.
+- NOT committed, pushed or included in the delivered v0.9 ZIP.
+- Diagnostic/deprecation changes, not a confirmed application fix.
+- User requested this handover while work was pending; local edits preserved.
+  Exact diff is included in Appendix I.
+
+15. STILL UNIMPLEMENTED OR UNVERIFIED
+------------------------------------
+- Windows UI smoke exact failure, fix and successful rerun.
+- User's Windows file picker, native UI, WebView2, DPAPI, resume and same-profile upgrade.
+- Android Conscrypt, lifecycle, lock/doze/background/metered/battery behavior,
+  original-key update and repeated-notification lifecycle.
+- Real Google consent/quota/uploads/resume/retention/Trash.
+- Physical Pi camera, service permissions/mounts, SD/memory/CPU/temperature,
+  reboots, outages and concurrent recording/viewers; physical power fix.
+- Real public DNS/router/firewall/CGNAT arrangements and UDP8189 media reachability.
+- Measured P50/P95/P99 clipboard latency and real device battery use.
+- Broader security audit/penetration tests and supply-chain review.
+- No Linux desktop GUI: Kali implementation is the Pi/server hub.
+- No CRDT distributed workspace or universal offline file queue.
+- No automatic router control, hosted TURN/relay or self-hosted general VPN mesh.
+- Premium historical UI, widgets, automation/input/Bluetooth aspirations are not
+  all newly implemented; inspect each feature before claiming completion.
+- No feature can act on an offline PC or bypass OS permissions merely via relay.
+
+16. ENVIRONMENT AND REPRODUCIBLE DEVELOPMENT
+-------------------------------------------
+Workspace: /workspace/onespace
+Original audit: /workspace/onespace-audit
+Evidence: /workspace/onespace-independent-validation and repo validation-independent/
+Go toolchain: /workspace/onespace-tools/go/bin/go (1.27.2)
+Use this toolchain; host “go” may be an unrelated command.
+GOPATH=/workspace/onespace-tools/go-path
+GOMODCACHE=/workspace/onespace-tools/go-mod-cache
+GOCACHE=/workspace/onespace-tools/go-cache
+From repository root with these variables:
+  /workspace/onespace-tools/go/bin/go -C hub test -race ./...
+  /workspace/onespace-tools/go/bin/go -C windows test -race ./...
+Go module language floor: hub1.23/desktop1.23.0; CI toolchain1.27.x.
+Cross-build Windows with GOOS=windows GOARCH=amd64 and -H=windowsgui.
+
+Android:
+ JAVA_HOME=/workspace/onespace-tools/jdk/usr/lib/jvm/java-21-openjdk-amd64
+ ANDROID_HOME=/workspace/onespace-tools/android-sdk
+ ANDROID_USER_HOME=/workspace/onespace-tools/android-user
+ GRADLE_USER_HOME=/workspace/onespace-tools/gradle-home
+ android/gradlew -p android ... --offline --no-daemon
+SDK36, Build Tools35.0.0, AGP8.13, Kotlin2.2.20, Gradle8.13;
+bytecode17, minSdk29, target35. Metrics warning about read-only .android was nonfatal.
+Gradle previously needed proxy:8080 system properties for network downloads.
+Git push worked through HTTPS_PROXY=http://proxy:8080. GitHub API Forbidden does
+not mean git push failed or user rejected approval. No signing secrets in source.
+
+17. RECOMMENDED CONTINUATION ORDER
+----------------------------------
+1. Inspect git status/diff and obtain exact Windows step6 error.
+2. Fix the actual cause. Use condition-based UI readiness when justified; do not
+   disable assertions to get a green run or claim guessed causes as proven.
+3. Validate PowerShell on Windows and rerun native UI/clipboard/security checks.
+   Review pending diagnostic edits before committing/pushing.
+4. Keep delivered ZIP immutable unless regenerating binaries/manifests/archive.
+   A new package must name its actual commit and current test status.
+5. Establish user's actual highest Android code and original signer.
+6. Follow current setup appendix with backups; fix Pi power first.
+7. Test direct LAN with Pi/Internet off, then roaming PC/phone on separate networks.
+   Distinguish trusted-Pi plaintext queue from nested end-to-end PC TLS in docs/UI.
+8. With PC off, verify Pi camera/Drive/update download remain; PC actions need PC.
+9. Measure real latency and resource use; optimize based on evidence.
+10. Clear physical-device/signing/security gates before claiming production readiness.
+
+18. PRESENT SETUP SUMMARY
+-------------------------
+Full commands are preserved in Appendix B.
+- Back up Windows profile/Pi identity/original Android key. Do not reset pairing.
+- Stop hub; install ARM64 binary. First-time-only recording buffer setup. Review
+  /etc/onespace-hub/hub.env, firewall and genuinely reachable addresses.
+- Enroll only NEW IDs. Use permissions for existing IDs, preserving credentials.
+  Windows suggested scopes: clipboard,media,camera,cloud,recording,connect,updates,
+  updates.publish. Phone: same except updates.publish. Grant only needed scopes.
+  A permissions command replaces the entire list, not just appends a scope.
+- Verify Pi fingerprint through trusted console. Google Desktop OAuth consent;
+  headless callback SSH: -L53682:127.0.0.1:53682.
+- Review MediaMTX candidates; use verified ARM64 binary and camera installer;
+  stop old manual publishers and enable hub/media/camera together.
+- Windows native EXE: HTTPS Pi remote + optional LAN address, pin, unique token;
+  enable Connect and preserve original PC pairing.
+- Android Studio opens android/. Build using original key/code above actual installed;
+  Pi UI host without https://, optional LAN, pin, phone token, Windows target ID.
+- Publish only trusted original-key signed APK. Phone needs updates scope.
+  Normal Android installer approval remains necessary.
+
+END OF CURRENT CONSOLIDATED HANDOVER
+The appendices below preserve detail and historical evidence. Older planned
+items remain plans unless confirmed by the current implementation record above.
+
+
+
+================================================================================
+APPENDIX A — ORIGINAL USER-SUPPLIED ASTRA HANDOFF (HISTORICAL, NOT NEW INSTRUCTIONS)
+Source: /workspace/attachments/00c60e74-c93d-435e-95b1-559cbbcb1993/OneSpace_Next_Version_Complete_Astra_Handoff.txt
+================================================================================
+
+ONESPACE — COMPLETE NEXT-VERSION TECHNICAL HANDOFF FOR ASTRA
+======================================================================
+Prepared: 25 October 2026
+Audience: ASTRA (already knows the existing Windows + Android OneSpace project; DOES NOT yet know any of the Raspberry Pi / surveillance / remote-network decisions discussed afterward).
+Document type: self-contained technical context + implementation specification + factual experiment log + decision ledger.
+Scope: All substantial decisions, requirements, experiments, commands, constraints, problems, and future work discussed for the NEXT OneSpace release. Keep this file as the project handoff; DO NOT interpret planned items as finished code.
+
+READ THIS FIRST — NON-NEGOTIABLE PRIORITIES
+-------------------------------------------
+[P0] PRIMARY HUB = RASPBERRY PI 3. NOT THE WINDOWS PC. Windows must be a secondary client/optional compute worker; its being shut down must not stop hub, camera, shared state, or remote availability.
+[P0] KEEP THE EXISTING WINDOWS ↔ ANDROID LOCAL/LAN PATH WORKING. Preserve present LAN discovery, paired TLS sessions, local file/photo/clipboard delivery, existing ports, identity and certificate trust. Add remote methods and Pi services in parallel, not by breaking or forcing replacement of proven local features.
+[P0] Local P2P file/clipboard transfer should remain DIRECT between peers whenever possible. Being “primary hub” means central authority/storage/coordination, NOT forcing every data byte through the Pi.
+[P0] Same-LAN OneSpace remains functional when Pi or Internet is offline (as it did previously), subject to the underlying device/OS permissions. Hub-only functions (hub recordings, central offline queues, etc.) necessarily stop if Pi is offline.
+[P0] Preserve existing signed Android app identity, signing key, Windows identity/pairing, backward-compatible protocol, local state, data folders and upgrade paths. No arbitrary resets, recreating trust keys, wiping devices, or turning off security/firewall.
+[P0] The current camera live stream works via GStreamer/libcamera → HW H.264 → MediaMTX RTSP ingest → WebRTC Chrome playback. Keep the exact proven baseline unchanged until an alternate implementation is measured to be better.
+[P0] User wants no inflated claims: actual measured FPS ≠ requested framerate; existing camera/codec errors and Pi undervoltage are real. No claim that unbuilt hub, recording, motion AI, remote transport, or install packages already work.
+[P0] No mandatory cloud account for LOCAL transfers. Remote mode can optionally use coordination/relay where direct connection is impossible; add opt-in and strict trust controls.
+[P0] User values: fluent low-latency feel, efficient CPU/RAM/battery, resilient background operation, good UI, secure pairing, configurable per-device feature permissions, and thorough hardware/end-to-end tests.
+[P0] Next release should include Pi as primary, OneSpace Anywhere (different-network access), and camera surveillance + recordings, while retaining prior OneSpace features and design.
+
+STATUS LABELS USED BELOW
+------------------------
+[OBSERVED WORKING] User personally ran and observed working.
+[OBSERVED FAILURE] User posted logs/error or reported failure.
+[EXISTING BASELINE] Shown in historical OneSpace project files, not necessarily verified in the most recent v2 build.
+[PLANNED] Proposed future implementation only.
+[EXPERIMENT] Command/idea that may or may not work, and may have been abandoned.
+[NEEDS VERIFICATION] Must inspect currently installed source/build or run reproducible tests.
+
+1. USER GOAL IN ORDINARY LANGUAGE
+---------------------------------
+- Make Raspberry Pi an always-on Home Hub for all OneSpace devices: Windows desktop, Android phone, other computers/tablets, future platforms.
+- No need to leave Windows PC running for core OneSpace hub services.
+- Windows can help with optional heavy transcoding/AI tasks while active, but isn't a hub dependency.
+- Use the Pi camera as an always-accessible surveillance camera within OneSpace; keep live video streaming and recording concurrently.
+- Retain up to five days of footage maximum, automatically delete expired/oldest content, use minimal disk space without ruining live-stream quality.
+- Add secure OneSpace Anywhere for devices on separate Wi-Fi/mobile networks, with all feasible OneSpace features (subject to OS permissions and connectivity) and fast automatic reconnect.
+- Existing PC↔Android local-first features must remain as-is; do not replace UDP/HTTPS LAN path with hub-required traffic.
+- Automatic selection of LAN direct vs remote encrypted direct vs relay, no manual IP-entry in normal UX.
+- Maintain premium dark-space/cyan glassmorphism UI and strong device privacy/security.
+
+2. WHAT ASTRA ALREADY KNOWS / KNOWN WINDOWS-ANDROID BASELINE
+-------------------------------------------------------------
+[EXISTING BASELINE; verify newest source, not guaranteed latest v2 runtime]
+- OneSpace is a native Windows x64 + Android companion application, local-first and account-optional for local operations.
+- Windows networking/sync engine: Go. Windows UI v0.7/v0.11-era builds were Win32; planned v2 premium UI: C# WinUI 3 / Windows App SDK with Go core separated through a locally authenticated interface (prefer named pipe; validate actual source).
+- Android: Kotlin; planned Jetpack Compose Material 3 UI; Android App ID documented as com.onespace.companion.
+- Local discovery: authenticated UDP broadcast, port 47602. DO NOT casually change this number or packet schema.
+- Local paired device API and file/photo/clipboard payloads: HTTPS/TCP port 47601 with TLS/certificate fingerprint pinning (TLS 1.3 cited in earlier architecture). Maintain existing endpoint/backward compatibility; don't declare new auth without migration.
+- Local live events: existing HTTPS/event-woken long polling; proposed optional WSS/WebSockets after benchmarking with fallback.
+- File/media: HTTPS binary payload transfer; resumable chunks, stable transfer IDs, SHA-256 integrity, backpressure, cancel/retry are proposed upgrades.
+- Historical web/dashboard served on 127.0.0.1:47600 in early builds; replaced by native Win32, and WinUI 3 desired. It is NOT a networking endpoint required for Pi; don't revive browser UI unless user requests.
+- Windows existing state documented under os.UserConfigDir()/OneSpace/state.json; TLS identity identity.key and identity.crt. MUST preserve to avoid breaking paired Android trust. Do not distribute these secrets in logs or handoff files.
+- Existing Windows temporary storage: OneSpace/Temporary, expires after 24h; permanent: OneSpace/Permanent until explicit deletion; custom Windows path chooser requested.
+- Windows APK updates historically in OneSpace/Updates/android.apk; Android release APK must continue using original signing key and monotonically increasing versionCode/versionName; in-place update must not repeatedly show false new-update prompts.
+- Earlier Android project reportedly AGP 8.13.0, Kotlin 2.2.20, Gradle 8.13 in retrieved README; older experimental sessions referenced Gradle 9.6.0. Current toolchain MUST be inspected rather than assumed.
+- Latest inspected legacy baseline: OneSpace-v0.11.1-Clipboard-Stability-Windows-Android.zip; separate v2 rebuild package exists and Windows Go engine was built, WinUI 3 source was uncompiled at an earlier point, Android and end-to-end behavior remained unverified. Do not assume v2 is finished/stable.
+- v0.11.1 Windows clipboard bug investigated in Source/Windows/internal/clipboard/clipboard_windows.go: OpenClipboard(NULL) used with EmptyClipboard and SetClipboardData; plan/patched source uses real hidden HWND owner. Cross-compilation alone is NOT Windows runtime success. Clipboard is highest-priority test gate.
+- Android 10+ does not permit arbitrary silent background clipboard reads from other apps: use allowed foreground/IME pathways, Android Share sheet/explicit send, and truthful error states; background service cannot bypass OS policies.
+- Native Windows app SHOULD NOT flash/open Command Prompt repeatedly or blink; historic v2 user reported launcher window blinking, repeated opening/closing CMD, and missing Build-Windows-v2.ps1 on incorrectly selected path. Installer/update service must be stable.
+- Main user requirements from earlier OneSpace projects: auto-sync clipboard text/images/links where OS permits; newest Android camera photo → Windows clipboard for immediate paste; quick local file/folder transfer and shared drop zone; tasks/notes/reminders/links; activity history; device status; pairing and per-feature permissions; permanent and expiring storage; widgets; optional volume/remote PC controls; Bluetooth switching research; optional input/remote access; update delivery. Advanced features not all confirmed complete.
+
+3. EXISTING ONESPACE UX AND NON-FUNCTIONAL REQUIREMENTS (KEEP)
+--------------------------------------------------------------
+- Premium dark space theme, near-black/navy #0A1020 family, translucent/frosted glass panels, cyan accent, rounded 18–24 px corners, subtle glow/depth and gradients, balanced spacing, smooth non-distracting transitions.
+- Desktop dashboard information-rich, not blank: real connected-device cards, connection mode/status, clipboard preview (privacy-masked), latest Android photo preview, real transfer/activity graphs, tasks/reminders/quick notes, temporary/permanent storage chart, recent files/timeline, upload/download throughput, CPU/RAM, latency, quick sharing and device controls. NO fake telemetry.
+- Every home-screen button opens a meaningful settings/detail page; global Features toggles and per-device Admin permissions; per-feature enable/disable; proper descriptions/help icons and failure/retry state.
+- Dedicated pages: Devices, Clipboard, Camera (new: surveillance subpage), Files, Workspace, Updates, Settings, Hub (NEW), Remote Connections (NEW), Surveillance (NEW), Storage/Retention (NEW).
+- Device statuses must be truthful: Ready / Connected but paused / Permissions blocked / Not connected / Offline; never equate pairing with ready.
+- Windows app: native installed x64 software, Start Menu/tray/startup (user-adjustable), clean updater/rollback, silent background engine without console flash, one process instance, accessible keyboard UI, responsive at 100/125/150/200% scale and multi-display.
+- Android app: Kotlin/Compose; dark/cyan cards, quick share, device and transfer status, widgets; explicit opt-in foreground connection service with visible status, WorkManager for deferred tasks and adaptive reconnect; user-triggered Disconnect & Quit should actually stop the service/observer and prevent unwanted reboot autostart.
+- Three resource modes proposed: Eco, Balanced (default), Instant. Avoid busy polling, unnecessary network wakeups, battery drain, high RAM. Android background and clipboard permissions must be explained truthfully.
+- Preserve local encrypted communication, TLS credentials, pairing, data and Android signing continuity through migration.
+
+4. THE NEW RASPBERRY PI PHYSICAL HARDWARE [OBSERVED]
+--------------------------------------------------
+- Board: Raspberry Pi 3 Model B Rev 1.2, 64-bit ARM (aarch64), ~1GB class RAM, user SSHes from Windows PowerShell/CMD.
+- OS: Kali Linux ARM64 (observed SSH banner): Linux 6.12.34+rpt-rpi-v8, Kali build 1:6.12.34-1+rpt1+0kali2 (2025-07-21).
+- Pi LAN IP during successful tests: 192.168.0.106. Windows source IP in SSH log: 192.168.0.104. Both private addresses DYNAMIC; do not hardcode for normal discovery.
+- Username displayed in prompts: kali. Typical camera workspace: /home/kali/camera-stream/; MediaMTX folder: /home/kali/camera-stream/mediamtx/.
+- Camera: CSI ribbon-connected Raspberry Pi Camera Module v1-style OV5647 sensor, found by kernel/libcamera as /base/soc/i2c0mux/i2c@1/ov5647@36.
+- libcamera version seen: 0.7.2, RPi vc4 pipeline. Captured camera exposed via cam -l (camera index 1) and GStreamer libcamerasrc.
+- Video device roles reported by dmesg: /dev/video0 unicam camera input; /dev/video11 BCM2835 V4L2 decoder; /dev/video12 BCM2835 V4L2 encoder; /dev/video18 ISP; /dev/video31 image encoder. Can't assume /dev/video0 is a webcam suitable for ffmpeg direct V4L2 ingest; libcamera pipeline required.
+- Boot config /boot/firmware/config.txt: camera_auto_detect=0, dtoverlay=vc4-kms-v3d, dtoverlay=dwc2,dr_mode=host, dtoverlay=ov5647, gpu_mem=128. `vcgencmd get_mem gpu` = gpu=128M.
+- Firmware reported by `vcgencmd version`: Sep 14 2026 14:50:41, a86983925695a7e63166327d7c002d64040ed31d.
+- RAM sample: total 856 MiB, available 666 MiB, swap 0. CMA reserved 262144 kB (=256 MiB), CMA free around 88432 kB at one diagnostic sample.
+- Wireless: wlan0 connected on 2.4 GHz 2437 MHz, signal -36 dBm (strong), reported tx link 72.2 MBit/s, rx 65.0 MBit/s. Wi-Fi strength alone does not prove no jitter or packet loss. Ethernet recommended for reliable recording if practical.
+- MAJOR POWER ISSUE: `vcgencmd get_throttled` returned `throttled=0x50005` = current undervoltage (bit0) and current CPU throttling (bit2); both had happened historically (bits16,18). This can cause FPS stutter and SD corruption. Fix supply and cable for Pi 3 B (quality 5.1V ~2.5A compatible supply) BEFORE calling 24/7 surveillance production-safe; re-test `vcgencmd get_throttled` after repair/reboot; desired 0x0. Do not hide flags, overclock, casually alter CMA/GPU config, or bypass power warnings.
+- CPU sample while live streaming: Pi top showed ~43.1% CPU idle system-wide snapshot, gst-launch ~124% of one core and mediamtx ~40% of one core, load averages ~2.51,2.37,1.84; these are snapshots, not sustained benchmarks.
+
+5. HOW THE CAMERA WAS BROUGHT UP — COMPLETE HISTORY
+---------------------------------------------------
+[OBSERVED] Initial apt/dpkg upgrade on Kali was badly interrupted (1535 packages), recovered with dpkg configuration, then installed libcamera-tools, v4l-utils, ffmpeg, GStreamer plugins, MediaMTX.
+- `rpicam-still` and `libcamera-still` were absent; don't assume Raspberry Pi OS rpicam suite exists on Kali.
+- cam -l recognized external OV5647. Single raw 800x600 XRGB8888 shot saved as /home/kali/frame-cam0-stream0-000000.bin; homegrown PNG conversion produced mostly dark image/purple noise (not a verified proper exposure/conversion).
+- Proper `cam -c 1 --stream width=640,height=480,pixelformat=RGB888 --capture=5 --file=/tmp/test-#.ppm` successfully saved five 640x480 RGB888 PPM frames (~921600 image bytes each).
+- FFmpeg v9.0.2-1 (gcc16) confirmed. `ffmpeg -hide_banner -y -f image2 -pattern_type glob -i '/tmp/test-*.ppm' -frames:v 1 /tmp/camera-test.jpg` succeeded with benign image2 filename-pattern warning.
+- Python v1 localhost/HTTP server `python3 -m http.server 8080` served snapshots; then `~/camera-stream/live.py` created MJPEG via cam PPM files and per-frame FFmpeg conversions on port 8081. Browser finally showed camera at http://192.168.0.106:8081; user found very laggy (cam restarted every 30 frames, disk IO, subprocess for every frame).
+- `~/camera-stream/fast_live.py` switched to GStreamer libcamerasrc -> videoconvert -> jpegenc -> multipartmux -> fdsink, Python HTTP browser at :8081; continuous MJPEG was smoother but browser playback/CPU/quality bottlenecks persisted. FPS/quality tweaks (requested 50, 55 fps, jpeg 45→80) are experiments, NOT today's preferred production system.
+- Installed GStreamer: gstreamer1.0-tools, gstreamer1.0-libcamera, plugins-base/good/bad, later gstreamer1.0-rtsp to get `rtspclientsink`. `gst-inspect-1.0 libcamerasrc`, `jpegenc`, `v4l2h264enc` all detected. `x264enc` not present at that time.
+- `gst-launch-1.0 -e libcamerasrc ! 'video/x-raw,width=640,height=480' ! videoconvert ! fakesink sync=false` ran 15 sec successfully, proving continuous camera capture.
+- Hardware H264 encoder discovered as `v4l2h264enc`. Some tests at 720p with forced H.264 Level4 reached PLAYING with valid caps, but later others failed first frame.
+- Kernel logs showed `bcm2835_codec_start_streaming: Failed enabling i/p port, ret -3` during failed encoder operations. GStreamer printed `Failed to process frame. Maybe be due to not enough memory or failing driver` even to fakesink. Standard RAM appeared fine; CMA and driver/firmware suspected. After reboot hardware encoding at 640x480 Level4 negotiated successfully, then streaming resumed.
+- Crucial gotcha: GStreamer `v4l2h264enc device=/dev/video12` emitted `property 'device' ... is not writable`, so DO NOT use that setting (GStreamer ignored it). /dev/video12 is encoder for diagnostic v4l2-ctl, not writable device selection by this GStreamer element.
+- Pi reboot ends SSH session and stops manually launched MediaMTX/GStreamer. Need systemd services with dependencies and restart once stable.
+- User successfully installed MediaMTX version v1.21.2 Linux ARM64 under ~/camera-stream/mediamtx/. Downloaded release `mediamtx_v1.21.2_linux_arm64.tar.gz` (~29MB). Started `cd ~/camera-stream/mediamtx && ./mediamtx`, loaded local mediamtx.yml. Terminal stays busy in foreground by design.
+- MediaMTX startup observed listeners: RTSP 8554 TCP, RTP 8000 UDP, RTCP 8001 UDP, RTMP 1935 TCP, HLS 8888 HTTP, WebRTC 8889 TCP HTTP + 8189 UDP ICE, SRT 8890 UDP, MoQ 8892/8893. Only expose what's needed; default services may need disabling/hardening.
+- GStreamer initially said `no element rtspclientsink`; fixed by installing gstreamer1.0-rtsp. With MediaMTX running, camera publishes RTSP to rtsp://127.0.0.1:8554/camera.
+- The Chrome WebRTC URL on LAN: http://192.168.0.106:8889/camera ; stream not found means MediaMTX has no live publisher or publisher errored. Browser cannot directly play raw RTSP/H.264 without WebRTC/HLS/browser-compatible transport.
+- OBSERVED WORKING: after reboot and dropping the unwritable device prop, H264 MediaMTX+Chrome at 640x480 requested 30 FPS worked. Then 640x480 requested 58 FPS worked. 60/1 failed/no stream.
+- OBSERVED WORKING user later says `stream 1296 972 46` and `stream 1344 1008 46` worked, latter best stable quality/smoothness. Requests above 46 at 1344x1008 (48/50) did not work in user tests. Requested framerate is NOT verified true camera or Chrome delivered FPS.
+- Several earlier assistant suggestions were optimistic/failed: 1280x960/58 upscale with videoscale+videoconvert failed; 60 FPS not working; arbitrary large custom resolutions and 50+ FPS list items were speculative (NOT validated). Do not promote as supported. Native OV5647 libcamera sensor modes referred to: approx 640x480 at up to 58.92 fps; 1296x972 at ~43.25 fps; 1920x1080 at ~30.62 fps; 2592x1944 at ~15.63 fps. Platform/driver actual negotiation and selected sensor mode must be probed; intermediate output sizes may be scaled/cropped and do NOT add genuine sensor detail. The fact 1344x1008 requested46 works does not prove 46 unique high-resolution frames delivered. 90 FPS hardware marketing does not mean supported mode in this driver.
+
+6. EXACT CURRENT CAMERA STREAM — PRESERVE THIS AS BASELINE
+----------------------------------------------------------
+[USER-SELECTED BEST, OBSERVED WORKING AND SMOOTH; last reiterated by user on 25 Oct 2026]
+
+  gst-launch-1.0 -e \
+    libcamerasrc \
+    ! 'video/x-raw,width=1344,height=1008,format=NV12,framerate=46/1' \
+    ! queue max-size-buffers=2 max-size-bytes=0 max-size-time=0 leaky=downstream \
+    ! v4l2h264enc extra-controls="controls,video_bitrate=5000000,repeat_sequence_header=1" \
+    ! 'video/x-h264,level=(string)4,profile=(string)baseline' \
+    ! h264parse config-interval=-1 \
+    ! rtspclientsink location=rtsp://127.0.0.1:8554/camera protocols=tcp
+
+- Capture requested at 1344x1008 NV12 46/1; hardware H264 encoder bitrate control 5,000,000 bits/s; repeat SPS/PPS sequence headers; H264 Baseline Level4; 2-frame leaky downstream queue; h264parse inject headers; RTSP RECORD over localhost TCP into MediaMTX path camera; WebRTC player in Chrome.
+- MediaMTX service in OTHER terminal: `cd ~/camera-stream/mediamtx && ./mediamtx`.
+- Chrome: `http://192.168.0.106:8889/camera` while LAN IP is unchanged.
+- User explicitly stated THIS 2-frame queue + 5Mbps + TCP variant is best and smoother than 1-frame queue / other experiments. DO NOT silently switch to 1-frame queue, UDP RTSP, lower resolution or bitrate in new release.
+- Existing saved helper script from discussion: `~/camera-stream/beststream.sh` was provided to create using shell heredoc and chmod; not verified installed by user. Consider service referencing this script only after checking it exists; can deploy a packaged canonical service.
+- Earlier shell `stream WIDTH HEIGHT FPS` function existed, allowing simple experiments, but functions aren't persistent unless added to shell config. The helper had Level4 and no custom bitrate; NOT identical to best production command. Preserve 5Mbps encoder control in canonical production service.
+- Performance FPS must be measured in Chrome `chrome://webrtc-internals` inbound-rtp video framesPerSecond/framesDecoded/framesDropped, GStreamer FPS probes, and sensor timestamps. Do not label requested FPS as delivered.
+- Other unsupported experimental custom aspect commands (`ratio WIDTH HEIGHT FPS`, `portrait WIDTH HEIGHT FPS`) cropped 640x480 and scaled it. No true added detail; rotating the physical camera + videoflip may better preserve field of view for portrait use.
+
+7. CENTRAL HUB ROLE — PI MUST BE THE PRIMARY, WINDOWS SECONDARY
+---------------------------------------------------------------
+[DECIDED]
+- Raspberry Pi Linux ARM64 runs OneSpace Hub daemon, primary device registry, trusted-device enrollment approvals, capability/access policy, shared sync metadata, durable offline messages, shared notes/tasks state, optional offline small-file drop, surveillance/recording and storage-management services. It should boot headlessly and remain running even if Windows/Android are closed.
+- Windows PC runs existing Go sync/network engine and native Windows UI as CLIENT; retains local clipboard watcher, OS volume/power controls, camera photo receiver, local cache, files and user-facing desktop UI. Optionally acts as powerful WORKER to transcode/archive old footage when online. It must NOT be required as central server for Pi services. Existing Windows listener 47601 may still operate for direct LAN clients: 'secondary client' does not mean disabling local receiver endpoints.
+- Android phone runs existing Kotlin app/service and local Android-permitted watchers/inbox/foreground share. It connects to Pi when available, can still transfer locally directly with Windows and use remote network; follows Android lifecycle constraints.
+- Pi is coordination/control-plane primary but NOT all-packets-through-it router/proxy. 2GB PC→phone file on LAN goes PC↔phone direct, while hub supplies identity/presence/authorized routing. This avoids congesting Pi 3 and preserves speed/battery.
+- Pi hosts permanent and 24-hour temporary buckets optionally for store-and-forward; per-user/device quotas. User's legacy Windows/Android temporary/permanent folders remain unaffected and local.
+- On hub outage: existing peer-to-peer LAN discovery/transfer/clipboard works, existing clients can keep their local cache and queue updates; no unsafe silent elevation of Windows into 'new primary' and no split-brain hub authorities. Hub recordings unavailable during hub outage.
+- On Internet outage: LAN and Pi local streaming/recording continue; remote access resumes when WAN available. On Windows PC off: Pi hub + camera + local/remote reachability continue; Windows-specific controls/data require PC online.
+- Hub should not do heavy H265/AV1 transcoding, multi-camera AI, giant relay or expensive searches on Pi 3. Windows worker performs eligible expensive tasks optionally, strictly under user control.
+- Use light Go service (proposal), SQLite WAL for durable metadata with migrations, protected key storage/files and one writer, systemd unit(s), health checks/watchdog, structured nonsecret logs; avoid giant Docker/Kubernetes stack on Pi3.
+- Central authority for auth/permissions at hub AND each endpoint must independently enforce its capability permissions. Never treat hub approval as permission to bypass Android/Windows OS controls.
+
+8. KEEP VS CHANGE VS ADD — EXACT COMPATIBILITY CONTRACT
+-------------------------------------------------------
+[KEEP UNCHANGED OR BACKWARD COMPATIBLE]
+- UDP broadcast local discovery, authenticated, port 47602; existing packets and clients continue to work.
+- HTTPS/TCP paired LAN API, port 47601; pinned certificate/fingerprint, TLS and payload/ACK semantics, same local direct behavior; retain existing device IDs/keys and pairing records.
+- Existing local Go/Kotlin engines, event listeners, Windows clipboard/photo/file handlers, Android camera-photo observer and secure file transfer; retain existing working behaviors and no added hard dependency on Pi/Internet.
+- Event-woken HTTPS long polling as fallback while WSS is introduced and tested. Avoid replacing with unverified new protocol in one release.
+- Existing temporary/permanent data semantics, upgrade signing, auth, user-visible controls, and premium UI design.
+- Working GStreamer→MediaMTX→WebRTC hardware-encoded Pi camera baseline.
+
+[ADD IN PARALLEL]
+- Pi Hub Core service with stable identity, capabilities, hub name, presence, registration, permissions, SQLite storage, and device lifecycle.
+- mDNS/DNS-SD auto-discovery alongside UDP 47602; existing UDP fallback; no IP hardcoding. Discover candidates, THEN authenticate pinned identity.
+- Optional WSS over pinned TLS for push events, bounded queues, priority, ACK, backpressure; keep legacy polling path until rollout completes.
+- Remote mesh overlay for different networks: MVP Tailscale/WireGuard; longer-term integrated OneSpace connection engine selects LAN direct → encrypted remote direct → relay, with NAT traversal & connectivity checks.
+- Device trust onboarding to Pi without resetting existing PC↔Android trust; authenticated hub pairing, per-device public keys/scoped permissions and revocation.
+- Resumable chunked HTTPS bulk transfers, manifests/folders, SHA-256 checksums, pause/cancel/retry/multi-device queues; safe sanitization and quota enforcement.
+- Smart surveillance recorder/timeline/exports and five-day retention/disk-pressure deletion.
+- systemd autorestart for Pi hub and camera/media services, unattended boot, safe cleanup and recovery.
+- Pi health/power/CPU/RAM/storage/temperature/network metrics to existing OneSpace UI, all real not fabricated.
+
+[DO NOT DO]
+- Do not shift LAN direct traffic to Pi as a forced hop, remove UDP/TCP47602/47601, reset Android pairing/signature, invalidate old clients, route everything to cloud, introduce mandatory login, give public Internet access to plain RTSP/WebRTC/Hub APIs, invent unlimited Android background clipboard rights, silently enable remote commands/camera access, or claim speed/battery percentage improvements without measurement.
+
+9. CONNECTION ENGINE — OPERATING MODES
+--------------------------------------
+- Mode A / LOCAL DIRECT: First attempt existing authenticated UDP LAN discovery and direct HTTPS 47601 transfer/clipboard. If local candidate proves reachable and trusted, choose it. Bypass Pi for large peer-to-peer payloads. Hub remains registration/presence authority when online; apps still interoperate when hub down.
+- Mode B / REMOTE DIRECT: When peers are on different networks, establish encrypted overlay/remote P2P to trusted device endpoints, not plain port-forwarded HTTP. Use end-to-end authenticated sessions, dynamic IP handling and permission checks.
+- Mode C / REMOTE RELAY: If NAT/firewalls prevent direct connection, fall back to encrypted relay service. Relay may carry ciphertext; it should not decrypt payload content when designing E2E app-level messages. May be slower and consume external bandwidth.
+- Mode D / STORE AND FORWARD: If recipient offline, keep bounded encrypted event/task/small-file jobs in hub if policy allows; deliver after reconnect with stable IDs and dedup, expiry, quotas, retry/backoff. Never pretend delivered when only queued.
+- Device selection should be automatic: network change/IP change triggers reconnection; authenticated health status, transport latency/throughput, metered policy, battery mode and rights inform path choice. Hysteresis to prevent rapid flapping. Continuous fallback; transparent UI path label ('LAN Direct', 'Remote P2P', 'Relay', 'Offline').
+- Tailscale first for deployment proof (Pi, Windows, Android clients) with existing WireGuard-based tunnel; Tailscale still uses external coordination/relay as needed. User wants eventually fully integrated OneSpace Anywhere UI without separate manual VPN app. Could explore self-hosted coordinator/Headscale later but that still needs reachable infrastructure. Avoid prematurely building cryptography/NAT engine from scratch without extensive tests.
+- Pi behind NAT/CGNAT may not be internet reachable. The hub alone cannot magically provide universal remote access; use an existing secure mesh or dedicated reachable coordination/relay node. Self-hosted relay on home Pi alone is not sufficient behind CGNAT.
+- LAN-only operation must never depend on reachability to Tailscale or internet.
+- Remote app features remain limited by OS APIs (clipboard/camera background policies, power control privileges); remote connectivity does not grant OS capabilities.
+
+10. HUB SERVICES AND DATA MODEL — PROPOSED
+-----------------------------------------
+[PLANNED] Lightweight Go Hub daemon as a background service + thin HTTP/WSS client APIs; main process auto-start via systemd.
+- Device Registry: stable device_id, public key/certificate fingerprint, platform, app/protocol version, display name, capability flags, permission scopes, network endpoints, current status, last_authenticated_heartbeat, revoked flag.
+- Auth/Pairing Manager: one-time physical/user approval, QR or one-time code for Pi enrollment, verifier keys, anti-replay, expiration and revocation; trust existing device certificates on migration with user-approved linking. Password-only is insufficient as indefinite reusable credential.
+- Presence Manager: authenticated heartbeat, timestamps, readiness per feature, network reachability; dead sessions timed out, state not fabricated.
+- Sync Coordinator: append-only operation IDs/change cursors, per-device ACK, retained/bounded notifications, conflict-safe tasks/notes/reminders and clipboard event metadata; outgoing queue survives restart.
+- Transfer Coordinator: permissioned direct path first, optional Pi inbox for offline recipients; chunked resume, SHA256 integrity, disk quota, path safety, retries, resume tokens, expiry.
+- Surveillance Integration: MediaMTX pipeline supervisor, authenticated viewer/publisher mapping, live status, playback timeline, export clips, five-day retention and quota policy, event snapshots, motion metadata in later phase.
+- Storage Manager: Temporary (24h), Permanent (explicit deletion), Surveillance (max 5d; quota enforcement), Logs (rotating). Distinct folders, quotas, access controls and periodic cleanup. Never delete permanent user files due to surveillance quota.
+- Health Service: supply undervoltage/current throttle, temperature, system CPU/RAM/disk pressure, camera online/actual FPS if measured, MediaMTX uptime, network path status, recording continuity; UI metrics must carry measurement timestamps.
+- Connection Manager: overlay health and reachable URLs, NAT/relay status; use network handles/certs, not IP as stable device identity.
+- Remote Action Dispatcher: idempotent authenticated user-approved requests, per-device scope enforcement, confirmation for dangerous commands, audit without content secrets. Target device executes OS-native action, never Pi privilege escalation.
+- Updater/Version Coordinator: authenticated release metadata, pinned signing identities, monotonic versions, optional update artifact cache, staged rollout, rollback path; the hub is coordinator not unofficial signature issuer.
+- Optional Worker Scheduler: route video transcoding/AI/file indexing to consented Windows worker when available; Pi not blocked when worker off.
+
+Suggested SQLite collections (proposal, not deployed): devices, trusted_keys, permissions, sessions, endpoints, sync_events, inbox_jobs, transfers, recording_segments, recording_events, motion_events, storage_quotas, audit_entries, updates, service_health. WAL mode + explicit schema migrations, backups, consistent file hashes; securely handle sensitive payloads at rest.
+
+11. REAL EXAMPLES TO PRESERVE
+----------------------------
+- Phone Android and Windows on same LAN: existing direct UDP discovery + HTTPS/TCP 47601 clipboard/file/camera-photo transfer. Hub does NOT add latency to payload transfer and must not interrupt legacy clients.
+- Phone on mobile data, PC at home: phone authenticates through remote overlay, hub identifies trusted PC; phone ↔ PC direct encrypted route if possible, relay if not. If PC offline, policy permits Pi to queue data for later delivery.
+- Phone watches surveillance remotely: phone authenticates to Pi over private overlay and opens an authorized WebRTC live camera path. Pi keeps recording while viewing, no Windows running needed. Remote ICE/candidates must work across overlay; don't assume LAN IP candidate reachable from internet.
+- PC shut down: Pi keeps device directory/shared notes/recorded camera and Android remote access; PC-specific clipboard and power controls offline until return.
+- Pi offline: Windows ↔ Android local direct sharing remains operational, local queues durable; remote camera and centralized queue unavailable; UI truthful.
+- Device IP changes: discovery/overlay identities stable; sessions renegotiated; don't reset pairing.
+- Different permissions: Android may be allowed 'watch_live' but denied 'download_recordings'; Windows approved for 'transfer_file' but forbidden from 'shutdown_android'; checks on hub AND endpoint.
+
+12. SURVEILLANCE GOAL AND REQUIREMENTS
+-------------------------------------
+- Pi OV5647 is a legitimate user-controlled, visible surveillance camera in an authorized environment. Provide visible recording indicators and privacy controls, no covert recording or unauthorized access.
+- Simultaneous LOW-LATENCY WebRTC live viewing + H.264 recording using ONE camera capture and ONE hardware encoding pass. Feed both consumers from MediaMTX rather than running separate libcamera captures or second heavy Pi video transcoder.
+- Embed live player in OneSpace Windows and Android app; authorized browser viewing available for testing; remote access through secure overlay; not open public raw ports.
+- Playback timeline by date/time across max five days, play/pause/seek/speed selection, list events, export clipped range to authorized device, mark download progress, control delete, indicator of gaps/power/network failures.
+- Stream high quality preserved: user insisted current 1344×1008 requested 46FPS, 5Mbps, 2-frame queue, RTSP TCP is best; don't reduce live quality as a space-saving shortcut.
+- Recording default: continuously record same H264 bitstream WITHOUT re-encoding, split into short recoverable fMP4 segments (e.g., 5 or 10 minutes; choose/validate) indexed by timestamps. Splitting into packet/segments DOES NOT reduce bytes at a fixed bit rate, it aids seek/recovery/deletion.
+- Retention: maximum five days, delete older completed segments after 120 hours; separate storage quota and minimum free disk threshold delete oldest completed segments even before 5d if necessary. Don't delete currently open file; atomic and crash-safe metadata updates, never delete unrelated folders. User specifically requested small storage; if capacity inadequate, UI clearly shows achievable retention not false 5d promise.
+- Video compression already H.264 uses keyframes (I) + inter-prediction (P/B depending profile). Packets = network delivery fragments, frames = video pictures, storage segments = time-chunked files. Distinguish in UI/spec.
+- At average 5 Mbps, approx 2.25GB/hour, 54GB/day, 270GB/five days (decimal GB; overhead not counted). 4Mbps=216GB/5d, 3Mbps=162GB/5d, 2Mbps=108GB/5d, 1Mbps=54GB/5d. A typical 32/64/128GB microSD cannot retain 5 full days at 5Mbps continuously. Recommend dedicated robust storage, ideally USB SSD or high-endurance microSD with power budget considered. Pi3 USB interface shares resources and user power is currently undervoltage: fix first.
+- Lossless trimming/re-mux of encoded stream into fMP4 saves negligible bytes; avoid claim that segments themselves compress footage. H264 bitrate reduction hurts quality if too aggressive.
+
+13. MEDIA SERVER RECORDING PROPOSAL — NOT ENABLED YET
+------------------------------------------------------
+[PLANNED CONFIG, VALIDATE AGAINST INSTALLED MediaMTX v1.21.2 BEFORE APPLYING]
+
+  pathDefaults:
+    record: false
+  paths:
+    camera:
+      source: publisher
+      record: true
+      recordPath: /mnt/onespace-recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+      recordFormat: fmp4
+      recordPartDuration: 1s
+      recordSegmentDuration: 10m
+      recordDeleteAfter: 120h
+
+- Above is conceptual configuration snippet; integrate with existing mediamtx.yml without blindly replacing file (which has other settings/paths). Check precise property names of installed v1.21.2 and test reload. The recording mount path doesn't exist by default; create ownership, permissions, mount and free-space checks first.
+- Recording generated by MediaMTX from the inbound video is separate from the WebRTC viewers. Use available recording/playback API to enumerate intervals and request clips; wrap behind OneSpace auth, permission gating, sensible disk I/O and rate limits.
+- For storage quota, external OneSpace cleaner must ensure safe, finished segments and coordinate with MediaMTX. Consider disk-pressure alerts, reserved free space, recordings not playable or missing, log retention and transactional index.
+- On encoder/publisher restart, MediaMTX path briefly offline; systemd can restart capture service and app timeline marks recording gaps; no fictitious uninterrupted coverage.
+- Protect recordings at rest; optional encryption key management (avoid encrypting with a key held only by turned-off PC). Ensure time stamps/time sync are stable; handle Pi no RTC/clock change, boot before network time and DST/timezone playback clearly.
+
+14. SMART VIDEO STORAGE — THREE OPTIONS PLUS ARCHIVE COMPRESSION
+-----------------------------------------------------------------
+[PLANNED, USER REQUESTED STORE SMALLER WHILE LIVE REMAINS UNCHANGED]
+A. CONTINUOUS (highest completeness): capture all H264 from single encoder, 5-day max/quota oldest-first. Full scene coverage; 270GB/5d at actual average 5Mbps.
+B. MOTION ONLY: keep full-quality video when motion detected, with e.g. 10s pre-roll in bounded memory/storage ring and 30s post-event recording; can miss motion, false triggers, or slow/quiet events. Requires a real event detector and safe segment selection; not a one-line toggle in MediaMTX.
+C. TIME-LAPSE ONLY: during quiet periods save one image every configurable 2/5/10/30 seconds rather than 46fps. Huge storage reduction BUT loses all movement between snapshots, cannot reconstruct full surveillance. Do not advertise as continuous coverage.
+D. SMART HYBRID (USER-FAVORED PROPOSED MODE): motion → original quality video; idle → low-frequency snapshots; optionally retain short low-fps recording if capacity permits; provide timeline of video clips and snapshots. Even if user asks 'no quality loss' make explicit: full event clips can be unmodified, but skipped idle moments are not recorded.
+E. AFTER-THE-FACT TRANSCODING: Windows PC when available can convert completed segments to H265/AV1 to reduce file size at roughly comparable perceived quality, then hashes/playback verified and originals only removed after safe verified commit. This is lossy re-encoding and resource-intensive; Pi3 should NOT try heavy H265/AV1 in real time. Windows worker OPTIONAL, no Windows requirement for live/recording.
+F. VARIABLE BITRATE: hardware H264 encoder might support VBR, but must inspect v4l2 controls. Reduces bits for static scenes while preserving detail as configured, actual size scene-dependent. Higher bitrate generally reduces blockiness but increases disk usage/network; 5Mbps confirmed subjectively sharp/smooth.
+G. RECORDING SCHEDULES: allow hours/day/weekday windows, record on-demand, exports before expiry, user setting max 5d and per-camera quotas.
+- Illustrative 5d saving example: 10% of time at 5Mbps + 50KB snapshot every 5 seconds for remaining 90% ~27GB video +3.89GB snapshots = ~31GB, vs 270GB. Not a guarantee; motion frequency and snapshot size unknown.
+- Example time-lapse JPEG every 5s @50KB: 864000s /5 = 86400 pictures over five days? CORRECT calculation: 5 days 432000 seconds /5 = 86400 pictures; at 50KB each ~4.32GB for ALL-IDLE 5d. Hybrid with 90% idle ~3.89GB.
+- Do not fire two simultaneous libcamera clients if pipeline does not support; branch after the one hardware-encoded stream and/or use low-fps downsample for motion detection carefully. On Pi3 motion detection must be sparse/light (e.g. downscaled grayscale sampling) or delegated to Windows worker; avoid making camera recording lag.
+- User explicitly asked to understand 'packet' CCTV recording. Explain: network packets vs compressed I/P frames vs timed MP4 segments; normal NVRs continuously segment and use overwrite-on-full; neither segmenting nor re-mux by itself saves storage.
+
+15. ONE SPACE SURVEILLANCE UI / INTEGRATION
+-----------------------------------------
+- Add surveillance page to Windows + Android, respecting established premium dark/cyan space style.
+- Live WebRTC window with fullscreen, connection/FPS bitrate/latency when measured, start/stop stream if authorized, user-visible recording icon, network mode (LAN direct/remote), permissions.
+- Timeline filter last 5 days, calendar/time scrub, clip segments/event bookmarks/gap indicators, 1x/2x speed etc, clip export/download with original/converted format choice, delete subject to policy.
+- Recording settings: continuous / motion-only / time-lapse / smart hybrid; snapshot interval 2/5/10/30 sec; motion sensitivity/areas later; pre/post buffer; five-day max; storage limit, free-space safety; optional Windows archive compression.
+- Device permission scopes: camera_live_view, camera_recording_view, camera_export, camera_delete, camera_settings, motion_notifications, retention_admin. Default deny remote until enrollment/approval.
+- Alerting: camera offline, recorder disk full, missing segments, undervoltage/throttle, storage near cap, motion (if enabled); no false claims or invisible spying.
+- Separate existing Android camera PHOTO auto-clipboard feature from Pi LIVE CCTV so settings and naming are not confused.
+
+16. PRIVACY / SECURITY ARCHITECTURE
+---------------------------------
+- Enrollment: trusted device identity, user approval on trusted device/hub, QR/one-time pairing only with verified authenticated channel and expiry. Legacy pairings must be preserved via versioned migration rather than resets.
+- TLS identity per endpoint with pinning/per-device keys. No cleartext secrets on LAN discovery. For remote data use secure overlay and independently authenticated/scoped OneSpace protocol; relays should not decrypt app-level private data.
+- Separate read/send clipboard, files, camera live view, recorded footage, export/delete, remote controls, settings, device power privileges; receiver enforces permission even if hub is compromised or mistaken.
+- No public forwarding of RTSP 8554, HTTP WebRTC 8889, SSH 22, or Go hub API; keep on private trusted network/overlay and implement session auth and CORS/CSRF/browser controls where applicable.
+- OneSpace's earlier Password Joining LAN aspiration: ensure resistant to eavesdropping/interception with vetted TLS/key agreement, device approval; no custom ad-hoc crypto protocols.
+- Sensitive remote actions (PC shutdown/reboot/sleep, phone power controls) require explicit user consent and OS privileges; ordinary Android cannot silently reboot/power down. Bluetooth switch must obey peripheral multipoint/bonding constraints.
+- Secure file paths and quotas: prevent traversal, symlink escapes, untrusted filenames, storage exhaustion or malicious spoofed discovery; SHA256 integrity and staged atomic writes.
+- Clipboard content, secrets, exact personal file names, auth tokens, keys, camera footage must not be in diagnostic logs; limited metadata and audit access events only.
+- Security updates, revocation, session expiration, audit, backup/restore and recovery without leaking private content.
+- Ethical filming: visible recording states and clear notices in private/shared areas, permissions before recording others, authorized use only.
+
+17. HUB RELIABILITY / FAILURE MODE SPECIFICATION
+-----------------------------------------------
+- Long-running Pi systemd services: (1) mediamtx service, (2) camera-publisher GStreamer service depends on MediaMTX listener/network, (3) onespace-hub service, (4) optional retention maintenance timer/service. Only restart a failed component; avoid restarting camera constantly on normal clip boundaries.
+- Boot recovery: camera starts after libcamera drivers and video encoder initialized; service loop backoff; wait for disk mount/time sync for recording; bounded logs; no runaway respawn if undervoltage/driver fails.
+- Stop/graceful shutdown: finalize segments; avoid corrupt half-written MP4; mark incomplete clips; SIGTERM/timeout; limited disk write amplification.
+- Unexpected shutdown/power loss: detect/repair timeline metadata, export only readable clips, never claim 5 days uninterrupted if gaps.
+- Read-only/failed storage: never record to OS root filesystem accidentally when USB SSD mount missing; explicit health alert.
+- Pi with 0 swap / underpowered supply: do not run full analytics, H265, heavy Python inference, NVR+AI stacks, or unlimited file relay simultaneously.
+- Independent Windows Android local functioning during Pi reboot; sync operations resume with IDs/ACK/dedup; no duplicated files/events due to retries.
+- Internet break and CGNAT: remote mode queues appropriately; home LAN remains functional; private overlay peer changes IP seamlessly.
+- UX remote outage distinguish 'hub offline', 'camera offline', 'PC offline', 'relay fallback', 'permissions denied', 'time not synchronized', 'camera recording stopped', 'device throttled'.
+
+18. PREFERRED DEPLOYMENT SHAPE & FILE TREE (PROPOSED, NOT EXISTING)
+------------------------------------------------------------------
+/home/kali/camera-stream/mediamtx/       [OBSERVED EXISTING directory]
+/home/kali/camera-stream/               [OBSERVED EXISTING workspace]
+/opt/onespace-hub/bin/onespace-hub      [PLANNED binary]
+/etc/onespace-hub/config.yaml           [PLANNED config]
+/var/lib/onespace-hub/hub.sqlite        [PLANNED metadata, migrate carefully]
+/var/lib/onespace-hub/temporary/        [PLANNED 24h inbox]
+/var/lib/onespace-hub/permanent/        [PLANNED explicit keep bucket]
+/mnt/onespace-recordings/camera/...     [PLANNED dedicated recording mount]
+/etc/systemd/system/onespace-hub.service [PLANNED]
+/etc/systemd/system/onespace-mediamtx.service [PLANNED]
+/etc/systemd/system/onespace-camera.service   [PLANNED]
+/etc/systemd/system/onespace-retention.service/.timer [PLANNED]
+
+- Filesystem owner dedicated restricted service account, unit sandboxing/capability constraints/USB mount dependencies; avoid root when not required. Raspberry Pi Kali apt/firmware permissions to be checked.
+- Do not assume above folders, mounts or services already exist. Existing Pi commands were manually run in SSH terminals, so reboot interrupted them.
+- Prefer build Go ARM64 binary on dev PC with reproducible dependencies and deploy via signed/verified package to Pi; Windows Go stays separate client; Android Kotlin updates require user-held original signing key.
+
+19. DEVELOPMENT RELEASE STAGES / ACCEPTANCE GATES
+------------------------------------------------
+Stage 0: source inventory + backups + baseline report. Compare current v2 source/binaries with historical v0.11.1 spec; confirm exact running Windows/Android protocol and Android build signing; backup trust identities. Baseline LAN tests, capture actual metrics and failure states.
+Stage 1: fix Pi undervoltage; disk selection and free-space; stabilize existing camera script/service in systemd with reboot/reconnect tests. DO NOT alter best baseline capture command.
+Stage 2: MediaMTX built-in recording in fMP4 + up-to-5-day retention; playback timeline APIs; separate maximum disk quota with safe cleanup; 24h recording soak; verify recording DOES NOT degrade live WebRTC.
+Stage 3: implement Linux ARM64 Go Pi Hub Core: registry, device enrollment, SQLite schema, permissions, health, offline event sync, management; authenticate locally; systemd auto start.
+Stage 4: integrate Windows/Android with Pi as preferred central coordinator WITHOUT changing legacy LAN peers. WSS/mDNS alongside old long poll/UDP, no regression. Backward-compatible protocol/feature negotiation.
+Stage 5: trial remote networking via Tailscale/WireGuard overlay, different Wi-Fi and mobile data, authenticated connection paths, relay fallback; ensure per-device ACLs and remote video ICE works, no exposed public insecure ports.
+Stage 6: native connection manager with LAN first, remote direct second, relay third, offline queue fourth; seamless reconnect, dynamic IP; auth/revocation; measurable latency.
+Stage 7: OneSpace Surveillance UI Windows/Android, clip timeline, export, quota alerts; optional hybrid motion/time-lapse while preserving full live stream; Windows-worker archival compression optional.
+Stage 8: signed build/install/update, migrations, backups, real device soak/telemetry/performance optimization.
+
+Release gates:
+- Existing LAN Windows↔Android direct clipboard text/image/photo/files still works, with no Pi or Internet, and maintains compatibility with old paired devices. At least 100 text round trips, Unicode, busy clipboard, image clipboard, reconnect and permission errors. Android 10+ OS constraints acknowledged.
+- Pi boots to functional hub and camera without Windows running, can record while one or more authorized browser/OneSpace viewers access live feed.
+- Five-day retention enforced, storage quota and free space preserved, no growing to fill OS partition; 24h temporary cleanup independent and permanent files retained.
+- Cross-network connectivity tested on mobile data and different home Wi-Fi: direct when possible and relay when necessary, denial/revocation, NAT changes, offline fallback and rejoin.
+- Check actual camera WebRTC frame rate, bitrate, dropped frames, freezing, round-trip delay, CPU/GPU load, temperature, power throttle at multiple qualities. No guessed achievements.
+- Pi safe after sudden reboot, storage unplugged, time mismatch, MediaMTX crash, network outage, back-to-back updates and interrupted uploads.
+- Windows UI no blinking/console flash; native installer/updater works; Android signed release migration/version codes valid; all glass UI pages/buttons/graphs functional not mocked.
+- Documentation includes exact install commands, configuration, recovery and uninstall, and a test result matrix with pass/fail and logs.
+
+20. CURRENT / PLANNED SERVICES AT A GLANCE
+-----------------------------------------
+EXISTING WINDOWS/ANDROID HISTORICAL STACK:
+  Windows Go native communication engine [EXISTING BASELINE]
+  Windows Win32 native UI, WinUI3 proposed rebuild [HISTORIC CURRENT / PLANNED]
+  Android Kotlin app and background service [EXISTING BASELINE]
+  UDP local discovery 47602 [EXISTING BASELINE]
+  HTTPS/TCP paired transfer/message 47601 [EXISTING BASELINE]
+  Pinned TLS certificates + existing token/approval [EXISTING BASELINE]
+  Event-woken HTTPS long polling [EXISTING BASELINE]
+  HTTPS binary photo/file upload [EXISTING BASELINE]
+  Local temporary 24h and permanent storage [EXISTING BASELINE]
+NEW PI CAMERA SERVICES (ALREADY TESTED LIVE):
+  libcamera v0.7.2 OV5647 CSI + rpi/vc4 ISP [OBSERVED WORKING]
+  GStreamer libcamerasrc + BCM2835 v4l2h264enc [OBSERVED WORKING after reboot]
+  RTSP GStreamer rtspclientsink TCP localhost8554 [OBSERVED WORKING]
+  MediaMTX v1.21.2 linux_arm64 [OBSERVED WORKING]
+  WebRTC browser viewer local :8889/camera [OBSERVED WORKING]
+  Hardware H264 1344x1008 request46fps 5Mbps [OBSERVED WORKING subjectively]
+NEXT RELEASE PROPOSED SERVICES:
+  Pi Go OneSpace Hub primary + SQLite WAL [PLANNED]
+  Hub pairing/ACL registry and event queue [PLANNED]
+  mDNS/DNS-SD in addition to UDP47602 [PLANNED]
+  WSS in addition to existing HTTPS polling [PLANNED]
+  Resumable HTTPS file transfer and offline queue [PLANNED]
+  Tailscale/WireGuard MVP + native P2P/relay fallback [PLANNED]
+  MediaMTX fMP4 5d recordings + playback + quotas [PLANNED]
+  Optional smart motion/time-lapse and Windows H265 archive [PLANNED]
+  Linux systemd management + hub/health dashboard [PLANNED]
+
+21. DISTINCTIONS / PREVIOUS INCORRECT CLAIMS ASTRA MUST NOT REPEAT
+-----------------------------------------------------------------
+- Do not imply default sensor 1296x972 at 46 or 1344x1008 at 46 means truly measured 46fps; only request acceptance and smooth observed playback. Need measure actual Chrome inbound frames and encoder timestamps.
+- Do not imply 60fps on OV5647 above 640x480 or 1280x960 upscale gives additional sensor detail. Prior 60fps request and upscaled 1280x960/58 failed. At 1344x1008 requests 48,50 user reported failure.
+- Do not recommend a new 1-frame queue as an unquestioned improvement: user explicitly says 2-frame queue, TCP, 5Mbps feels better.
+- Do not report hardware encoder fully healthy unconditionally: repeated ret -3 GStreamer failures occurred and reboot temporarily resolved/allowed working stream. Monitor and recover, test sustained load.
+- 'Stream not found' in WebRTC was caused by no successful RTSP publisher when encoder failed; it does not mean browser URL or camera ribbon broken.
+- `rtspclientsink` was missing until install of gstreamer1.0-rtsp; current module subsequently available.
+- `v4l2h264enc device=/dev/video12` generated unwritable property warning. Never use as config.
+- The literal address 0.0.0.0 is an all-interfaces bind address, NOT browser URL; use Pi's LAN/overlay IP.
+- CPU available memory was ample but `throttled=0x50005` conclusively showed power issue; don't skip hardware fix.
+- 5Mbps 5day size ~270GB. Recording in 'packets' or 10min segments doesn't magically cut it; motion/time-lapse trade completeness; H265 on Pi3 not a practical realtime expectation.
+- Don't state Tailscale, hub, recording, remote networking, Pi systemd, motion detector already deployed; only planned.
+- Don't assume new Pi service can replace Windows Go's local listener while preserving existing pairing; local clients still require peer endpoints.
+- Even a well-working remote tunnel cannot bypass Android platform clipboard/background or reboot restrictions.
+
+22. ASTRA'S IMMEDIATE IMPLEMENTATION DIRECTIVE
+-----------------------------------------------
+Astra: You know the existing OneSpace Windows/Android source. TREAT THIS FILE AS THE NEW HUB + SURVEILLANCE + REMOTE NETWORK EXPANSION SPEC. Treat the current existing v2 master-plan requirements as continuing unless directly superseded by the new Pi-primary decisions. First inspect the actual repo state, reconcile differences from the historical v0.11.1/v2 documents, identify compatibility-critical endpoints/IDs/state, and create a concrete staged plan tied to code modules, migrations and reproducible tests. Then implement one verified incremental phase at a time without breaking working local functionality. The Pi-primary requirement and preservation of working direct LAN paths are absolute. Record every assumption and measured outcome explicitly. Don't demand the user redo successful camera capture tests needlessly. Start from the EXACT successful 5Mbps/46fps-requested 1344x1008 GStreamer→MediaMTX pipeline and the existing Pi install. Fix undervoltage and install robust storage BEFORE 24/7 surveillance rollout. Use secure private remote overlay for initial different-network access, rather than exposing RTSP/HTTP on public internet. Support five-day maximum storage quota and timeline; add optional smart motion/time-lapse/Windows-assisted compression only when implemented and tested. Respect power/battery, Android OS restrictions, signed update continuity, and true acceptance tests.
+
+23. REMAINING OPEN DECISIONS THAT NEED MEASUREMENT, NOT GUESSING
+---------------------------------------------------------------
+- Pi storage: actual microSD capacity / available disk / planned external USB disk for five days not supplied. Must inspect or ask only when essential. Five-day continuous 5Mbps requires ~270GB.
+- PSU specifics not supplied; reported active undervoltage must be fixed and reverified before relying on hub.
+- Pi LAN IP might change; don't pin to 192.168.0.106.
+- How user will provision remote overlay identity (personal Tailscale account or alternative self-hosted coordinator), and how multi-user permissions administered. Local must remain account-free.
+- Measured real unique capture FPS at 1344x1008 request46, achieved bitrate, actual compression/encoder controls, WebRTC ICE remote connectivity; must benchmark.
+- Best recording policy default: user liked smart hybrid concept but did not definitively choose continuous vs hybrid, nor specific event thresholds. Provide choice, with explicit surveillance completeness warning.
+- User has not specified desired storage device/quota or cloud backup strategy (avoid inventing persistent cloud storage requirement).
+- Latest actual v2 build source, installer/Android signed binaries and dependencies need inspection; historical docs and previously discussed version numbers may differ.
+- CCTV legal/privacy details depend on deployment location, provide user control/notice and secure access.
+
+24. REPRODUCIBLE PI COMMAND QUICK REFERENCE
+-------------------------------------------
+# SSH from Windows (observed IP during session):
+ssh kali@192.168.0.106
+
+# Camera detection/examples (camera index 1 for cam):
+cam -l
+cam -c 1 --stream width=640,height=480,pixelformat=RGB888 --capture=5 --file=/tmp/test-#.ppm
+
+# Pi health:
+vcgencmd get_throttled
+vcgencmd get_mem gpu
+free -h
+grep -i cma /proc/meminfo
+iw dev wlan0 link
+sudo dmesg | grep -iE 'bcm2835.codec|bcm2835-codec|v4l2|cma|allocation failed' | tail -n 30
+
+# Installed camera/media modules:
+gst-inspect-1.0 libcamerasrc
+gst-inspect-1.0 v4l2h264enc
+gst-inspect-1.0 rtspclientsink
+gst-inspect-1.0 jpegenc
+
+# MediaMTX in a terminal (currently manual, not boot service):
+cd ~/camera-stream/mediamtx
+./mediamtx
+
+# Main user-approved smooth high-quality stream: run in ANOTHER terminal (MediaMTX must already listen):
+gst-launch-1.0 -e \
+  libcamerasrc \
+  ! 'video/x-raw,width=1344,height=1008,format=NV12,framerate=46/1' \
+  ! queue max-size-buffers=2 max-size-bytes=0 max-size-time=0 leaky=downstream \
+  ! v4l2h264enc extra-controls="controls,video_bitrate=5000000,repeat_sequence_header=1" \
+  ! 'video/x-h264,level=(string)4,profile=(string)baseline' \
+  ! h264parse config-interval=-1 \
+  ! rtspclientsink location=rtsp://127.0.0.1:8554/camera protocols=tcp
+
+# LAN test browser:
+http://192.168.0.106:8889/camera
+
+# Historical old MJPEG test URL, NOT current preferred stream:
+http://192.168.0.106:8081
+
+# Legacy direct Windows/Android LAN ports (retain):
+TCP 47601 paired HTTPS API
+UDP 47602 authenticated discovery
+
+# Common errors and remediation:
+# 'no element rtspclientsink' -> gstreamer1.0-rtsp plugin missing (installed during earlier setup).
+# 'Stream not found' -> no publisher to MediaMTX /camera; inspect GStreamer encoder and MediaMTX logs.
+# bcm2835-codec failed i/p port ret -3 -> encoder/firmware issue seen; test simple fakesink, memory/CMA, power; reboot helped once, not permanent proof.
+# `device` property not writable on v4l2h264enc -> don't specify device=/dev/video12 in pipeline.
+# 'throttled=0x50005' -> current undervoltage+throttling. Power remediation required.
+
+END OF ASTRA HANDOFF — The current Pi home hub and remote networking are DESIGN WORK awaiting implementation. The camera/WebRTC capture path is the verified starting point.
+
+
+
+================================================================================
+APPENDIX B — CURRENT FULL SETUP GUIDE
+Source: /workspace/onespace/SETUP-v0.9.0.md
+================================================================================
+
+# OneSpace v0.9.0 complete setup
+
+This is a development preview. Keep the previous installation and private
+backups. The cloud build did not deploy anything to your Pi, Google account,
+Windows installation or phone. Do not share tokens or signing keys.
+
+## 1. Get the files and preserve identity
+
+Extract the complete v0.9.0 ZIP, or clone the development branch:
+
+```sh
+git clone --branch dev/onespace-independent-connect --single-branch https://github.com/ironsensey/onespace.git
+cd onespace
+sha256sum -c SHA256SUMS.txt
+```
+
+Keep Windows `%AppData%\OneSpace` (or your custom data folder), the stopped Pi's
+`/var/lib/onespace-hub`, and the original Android signing key. Use the same
+`com.onespace.companion` package. Do not uninstall Android to bypass a signer
+error. The Pi is the documented Kali aarch64/ARM64 Pi 3 with 1 GB RAM.
+Fix the previously reported undervoltage before relying on camera operation.
+
+## 2. Install the Pi hub
+
+Skip the stop command on a first installation. Commands below run in the
+extracted project root on the Pi:
+
+```sh
+sudo systemctl stop onespace-hub.service
+sudo sh hub/deploy/install-hub.sh bin/onespace-hub-linux-arm64
+```
+
+For recording, inspect and run this FIRST-TIME ONLY script while stopped:
+
+```sh
+sudo sh hub/deploy/setup-recording-buffer.sh
+```
+
+It creates a 128 MiB ext4 image on the SD card, not in RAM. It refuses an
+existing image/recordings. Install e2fsprogs/util-linux if tools are missing.
+Never delete an existing image containing footage. Keep at least 512 MiB free
+outside the buffer and space for the published APK. Outages can fill the buffer
+and cause gaps; it is not long-term offline recording storage.
+
+## 3. Choose reachable Pi addresses
+
+Edit `/etc/onespace-hub/hub.env` after installation. For LAN-only testing, use
+your Pi LAN address; loopback 127.0.0.1 is unreachable from other devices.
+An all-interface example is:
+
+```text
+ONESPACE_LISTEN=0.0.0.0:47603
+ONESPACE_ALLOW_PUBLIC=false
+ONESPACE_CAMERA_UPSTREAM=http://127.0.0.1:8889/camera/whep
+```
+
+Restrict the listener with your OS firewall. For remote access without a VPN,
+the Pi needs public IPv6 reachability or a suitable public IPv4/router port
+forward for TCP 47603. Set `ONESPACE_ALLOW_PUBLIC=true` only for that deliberate
+deployment. Ingress has connection caps, but a public deployment still needs
+firewall rules, OS updates and security testing. Forwarded headers never grant
+access. Do not expose 47601 on the Windows laptop publicly.
+
+**Carrier NAT cannot be fixed by this ZIP.** If your ISP gives no reachable
+address, ask about a public address/IPv6, or provide another reachable relay.
+No hosted endpoint, router change or DNS name is created automatically.
+Tailscale remains an optional compatibility route, not a requirement.
+
+Use a stable DNS name if your public address changes. Both apps support an
+optional Pi LAN address with the SAME certificate pin, allowing local access
+when the router cannot loop public traffic back into your LAN. Windows still
+uses outbound connections to the Pi when it moves to another network.
+
+## 4. Grant device scopes while the hub is stopped
+
+For NEW devices only:
+
+```sh
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub enroll --data /var/lib/onespace-hub --id windows --name 'My PC' --kind windows --scopes clipboard,media,camera,cloud,recording,connect,updates,updates.publish
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub enroll --data /var/lib/onespace-hub --id phone --name 'My phone' --kind android --scopes clipboard,media,camera,cloud,recording,connect,updates
+```
+
+For EXISTING IDs, retain tokens and explicitly replace their scope lists:
+
+```sh
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub permissions --data /var/lib/onespace-hub --id windows --scopes clipboard,media,camera,cloud,recording,connect,updates,updates.publish
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub permissions --data /var/lib/onespace-hub --id phone --scopes clipboard,media,camera,cloud,recording,connect,updates
+```
+
+Grant only what you need. `connect` is required on BOTH relay devices. It does
+not grant PC pairing or override PC permissions. `updates` downloads APKs;
+`updates.publish` publishes APKs/reserves version codes. Do not grant publishing
+to ordinary receiving devices. Revoked devices cannot be revived by a scope change.
+Inspect the Pi's identity through your trusted local/SSH console:
+
+```sh
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub fingerprint --data /var/lib/onespace-hub
+```
+
+## 5. Configure Google Drive and camera services
+
+Follow **DRIVE-SETUP.md sections 4–5** for your own Desktop OAuth client,
+Google sign-in and SSH loopback callback. Use only the downloaded JSON privately;
+Google credentials remain on the Pi. Testing-mode consent may expire in seven
+days. OneSpace requests Drive access, not Gmail-reading access.
+
+Copy the recording example to a writable file, REVIEW it against your working
+MediaMTX v1.21.2 configuration, and preserve your actual network candidates:
+
+```sh
+cp hub/deploy/mediamtx-drive-recording.example.yml mediamtx-reviewed.yml
+```
+
+Set `webrtcAdditionalHosts` to your actual reachable LAN/public addresses or
+names as needed. Live media uses UDP 8189. RTSP 8554, WHEP HTTP 8889 and API 9997
+must stay loopback-only. HTTPS working does not prove WebRTC media is reachable.
+Keep your proven libcamera/GStreamer pipeline; requested FPS is not measured FPS.
+
+The full ZIP includes a checksum-verified MediaMTX ARM64 binary. Install it and
+your REVIEWED config with the managed service installer:
+
+```sh
+sudo sh hub/deploy/install-camera-services.sh bin/mediamtx-linux-arm64 ./mediamtx-reviewed.yml
+```
+
+The installer preserves an existing installed publisher by default. You can
+explicitly supply a proven custom publisher script as its third argument. It
+checks required GStreamer plugins/groups, makes backups and does not edit
+firmware. Stop old manual MediaMTX/camera processes before enabling services;
+do not run two publishers/transports on the same ports.
+
+```sh
+sudo systemctl enable --now onespace-hub onespace-mediamtx onespace-camera
+sudo systemctl status onespace-hub onespace-mediamtx onespace-camera --no-pager
+```
+
+Stopping/restarting the hub also stops its dependent media services. After
+maintenance start all three again. Check journals if a driver/group/sandbox
+setting differs on your actual Kali installation.
+
+## 6. Windows native app
+
+1. Fully exit the old engine and back up its profile.
+2. Run `bin/OneSpace-Windows-v0.9.0-Preview.exe`. It is unsigned developer code.
+   The main UI uses Windows controls. No external dashboard browser is opened.
+3. Home shows the PC fingerprint and addresses. Set a 12+ character ecosystem
+   password if not already configured. Devices approves/rejects pairing.
+4. Pi connection: enter the remote reachable HTTPS address, optional LAN HTTPS
+   address, verified Pi fingerprint, Windows token, and phone hub ID.
+5. Enable hub and **built-in OneSpace Connect**, then save. Keep copied-text
+   route `lan` for the existing PC inbox carried inside end-to-end TLS. The
+   separate `hub` short-text route trusts the Pi with queued plaintext.
+6. Settings controls automatic clipboard sharing, startup and power policy.
+   Per-device permissions remain under Devices. Reapply startup if you move or
+   rename the executable; an old startup entry can still point to your old build.
+7. Files, tasks, notes, cloud storage and recording are native pages. Choose file
+   opens the OS picker on path-based pages. Refresh lists IDs used in the forms.
+8. Live camera is an isolated in-app Microsoft WebView2 video surface, with
+   browser permissions denied, external resources blocked and scoped RPC.
+   Install the official maintained WebView2 Runtime if absent:
+   https://developer.microsoft.com/microsoft-edge/webview2/
+9. Minimize the dashboard to keep PC sharing running. Closing it stops the PC
+   engine. Pi camera/storage remain independent. `-legacy-ui` opens the old
+   browser UI only when explicitly requested for troubleshooting.
+
+## 7. Android compatible update
+
+The ZIP includes source and an UNSIGNED release APK (versionCode 28).
+The source uses a conservative floor of 28 and minimum 29 for the next build. It cannot update your
+installed app until signed with the original signing key.
+
+Open `android/` in Android Studio. Use SDK 36, Build Tools 35.0.0, the supplied
+Gradle 8.13 wrapper and a full JDK 17/21. Set the known published version floor
+from your ACTUAL highest release, then Generate Signed App Bundle / APK → APK
+with your existing keystore/alias. Never replace the key or application ID.
+Alternatively sign the bundled unsigned APK using your SDK's apksigner and
+original key, with passwords entered privately. Check its code exceeds the
+installed version before publishing. Do not use the cloud debug signer.
+
+In OneSpace, configure Pi Hub with the address WITHOUT `https://`, optional
+LAN address, pin, phone token and Windows hub target ID. Verify/save. Keep your
+original PC pairing. Enable **built-in Pi fallback** for PC features.
+
+For a new remote PC pairing: first configure the hub, then open Pair PC. Enter
+the PC certificate pin and password and select **Pair through configured Pi**.
+Approve locally in the Windows native app. Hub enrollment alone cannot pair a PC.
+
+Enable Receive Windows clipboard and camera/photo access only as needed.
+Mobile background sharing needs its own consent. Android still restricts
+background clipboard access; open/unlock OneSpace to activate received paste.
+A force-stopped app or vendor battery policy can interrupt background work.
+
+## 8. Updates while the laptop is off
+
+In Windows Updates choose the original-key-signed APK and **Publish to Pi**.
+Your Windows hub token needs updates.publish; use Pi published release to check
+its actual manifest. Android Hub settings → **Get Android updates from Pi**
+requires the phone's updates scope. Check/download/install through Android's
+normal user-approved installer. Package, version, hash and signer are checked.
+Google Drive and the Pi relay are not used to bypass Android installation rules.
+
+## 9. Automatic shared version codes
+
+Local builds retain a file-locked increasing counter. For builds on several
+machines, use the Pi as the single authority. Privately set these environment
+variables on the builder (not in source control):
+
+```text
+ONESPACE_SHARED_VERSION_CODES=true
+ONESPACE_HUB_URL=https://YOUR_PI:47603
+ONESPACE_HUB_FINGERPRINT=YOUR_VERIFIED_64_HEX_PIN
+ONESPACE_HUB_TOKEN=YOUR_PUBLISHER_SCOPED_TOKEN
+```
+
+Explicit assemble/bundle/install builds reserve a durable code before packaging.
+IDE sync does not reserve. Failed builds leave gaps; an unavailable authority
+fails the build instead of silently reusing a code. Update the published floor
+first if your existing release is higher. Keep the local .onespace counter.
+The native Windows Updates page can reserve/show a code; the Python helper in
+tools can also reserve and build. For an already reserved code use
+`-PonespaceVersionCode=N` to avoid a second reservation. Use one authority for
+all intended publishers; independent authorities cannot coordinate codes.
+
+## 10. Verify before relying on it
+
+Test local text/image/photo/file sharing; move the laptop and phone to different
+networks; verify the built-in connection and PC permissions. Check reconnects,
+large transfers, screen lock/unlock and metered consent. Verify moving live
+frames, one then two viewers, short recording, playable Drive clips, retention,
+Trash quota, reboot and an internet interruption. Turn Windows off and verify
+Pi camera/cloud/update download still work. PC actions naturally need PC online.
+
+Inspect errors locally:
+
+```sh
+sudo journalctl -u onespace-hub -u onespace-mediamtx -u onespace-camera -n 80 --no-pager
+```
+
+Windows logs remain under the profile's onespace.log. Read VALIDATION.md for
+what passed here versus real Windows/Android/Pi and Google checks still unrun.
+The branch-limited GitHub Actions workflow supplies Windows-native and security
+checks without release signing keys. Check its actual run results on GitHub;
+those Windows jobs cannot be run inside this Linux workspace.
+
+For an Android rollback without deleting data, build the older source with the
+same signing key and a NEW higher version code. Android normally rejects a
+straight installation of an older APK over the new version.
+
+
+
+================================================================================
+APPENDIX C — PACKAGED VALIDATION REPORT (CI STATUS SUPERSEDED BY SECTION 14)
+Source: /workspace/onespace/VALIDATION.md
+================================================================================
+
+# v0.9.0 Independent Preview validation
+
+Validated in the Linux cloud workspace on 27 October 2026. This is a tested
+preview, not a release certified on the user's physical devices or Google account.
+Current evidence is in validation-independent/; older evidence is archived.
+
+## Passed here
+
+- **82 Go test cases including subtests**: 42 hub/camera/cloud/update and 40
+  desktop/clipboard cases, with the race detector; no failed or skipped cases.
+  Desktop clipboard integration uses Linux stubs, not physical Windows paste.
+- Relay coverage: missing scope/offline/self target, bounded connection slots,
+  real nested TLS with an independent PC certificate, revocation, malformed
+  upgrade rejection and shutdown. Shared code allocation covers concurrent
+  reservations, restart persistence and rejection of corrupted counters.
+- Update store covers publisher-vs-reader authorization, malformed APKs,
+  monotonic publication, actual bytes/hash/manifest, restart and corrupt metadata.
+- Native backend covers note/task/file lifecycle, permissions/validation through
+  the original handlers, credential masking, retention of pagination cursors,
+  and cancellation without partial-file persistence or source-file deletion.
+- **Actual MediaMTX v1.21.2 Linux x64 recording integration** passed, with a
+  synthetic FFmpeg H.264 publisher, completed playable MP4 segments, the actual
+  completion hook, a fake Drive service and checksum-verified local cleanup.
+  This does not test the Pi's physical CSI camera or Google account.
+- **19 Android JVM tests passed**, including real OkHttp/nested TLS fixtures:
+  original PC identity and bearer authentication survive the relay; wrong Pi
+  and PC identities are rejected; an unavailable LAN Pi address falls back.
+  This is JVM TLS, not Android Conscrypt/lifecycle/instrumentation testing.
+- Android **debug and unsigned release assembly passed**, versionName
+  `0.9.0-preview`, APK versionCode **28**, package `com.onespace.companion`.
+  Both lint variants have **0 errors and 41 warnings**. Full reports are included.
+- Source version metadata is advanced conservatively to floor 28/minimum 29
+  for future builds, preventing fresh source copies from building below the
+  bundled candidate. Update the floor again if the user's actual release is higher.
+- Actual hub + Linux desktop processes passed eight integration groups: inner
+  PC pin verification, denial without PC pairing, pairing approval, workspace/
+  item operations, PC permission enforcement, APK publication and duplicate-code
+  rejection, APK download with Windows stopped, and shared code reservation.
+- Actual Gradle packaging configuration (dry-run) and the Python helper reserved
+  increasing codes against a temporary pinned hub. No release key was used.
+- Packaged static hub CLI/TLS/signaling smoke passed ten groups, including a real
+  media-event expiry wait and durable purge. The timing in that fixture is not
+  measured PC-to-phone latency.
+- Embedded video JavaScript passed mocked connection/stop and Go-RPC arity/proof
+  checks. This is not real WebRTC playback or a native Windows UI test.
+- Windows GUI x64 and Linux ARM64/x64 binaries cross-compiled. Windows-targeted
+  and hub go vet passed. Windows clipboard memory copying uses RtlMoveMemory,
+  avoiding the former foreign-address-to-Go-pointer vet warnings.
+- Camera/install shell syntax and Python test/helper syntax passed. Both MediaMTX
+  ARM64 and amd64 archives matched the official upstream checksum manifest;
+  the ARM64 binary and redistribution licence are packaged.
+
+## Blocked or still requires real setup
+
+- **Dependency vulnerability scanning did not complete**: this environment's
+  Go vulnerability database request returned Forbidden. No clean-security-scan
+  claim is made. The branch-limited GitHub Actions job provides a permitted-network
+  check, but its actual results must be inspected separately.
+- Real Windows native UI, file picker, OS clipboard, power/network/resume events,
+  WebView2 video playback and same-profile upgrade remain unrun here. A disposable
+  Windows clipboard test and UI Automation smoke script/workflow are included.
+- Real Android Conscrypt, WebView/WebRTC, document picker, background service,
+  metered consent, battery behavior and same-original-key in-place upgrade.
+- Public Pi endpoint/DNS/firewall/router setup. No public address or hosted relay
+  was created. Carrier NAT without another reachable endpoint remains a boundary.
+  No general-purpose ICE/STUN/TURN data connection engine is supplied.
+- Actual Google OAuth, quota, upload/resume, retention and Trash behavior. Google
+  API tests use local fixtures; no user's account or files were changed.
+- Actual Pi installation of the loop filesystem/systemd camera services,
+  permissions, OV5647 hardware, SD endurance, power, RSS/CPU/temperature,
+  simultaneous viewing/recording, network outages and reboot recovery.
+- The earlier undervoltage report still needs a physical supply/cable fix.
+
+The Windows executable is unsigned developer code. The bundled Android release
+APK is UNSIGNED and needs the user's original key before installation. Debug
+validation APKs are not bundled as upgrades. No signing key, user credential or
+pairing profile was distributed. Original test branch/package remain separate;
+Android rollback needs the same signer and a higher code, not a simple downgrade.
+
+
+
+================================================================================
+APPENDIX D — PROTOCOL AND SECURITY RECORD (CONTAINS HISTORICAL SUBSECTIONS)
+Source: /workspace/onespace/docs/PROTOCOL-AND-SECURITY.md
+================================================================================
+
+# v0.8.0 Drive and recording additions
+
+- New authenticated `/hub/v1/cloud/*` routes are separate from the original LAN protocol.
+- `cloud` is a new explicit device scope; recording additionally requires `camera` and `recording`.
+- Native Windows local routes retain their loopback/Host/X-Local-Key gate and the pinned hub credential. Android uses exact certificate pinning and a non-exported protected activity.
+- Google OAuth Desktop flow requests only `drive.file`, uses PKCE and a state-checked loopback callback. Tokens and resumable URLs are owner-only Pi metadata, never UI fields.
+- Fixed Google endpoints, disabled redirects, strict resumable-session origin/path validation, upload bounds and stable preallocated Drive IDs prevent arbitrary URL forwarding and duplicate files after ambiguous completion.
+- Only OneSpace-marked files in the verified app folder may be managed; unrelated Drive files and folders are rejected.
+- Uploaded MP4s are ordinary Google-readable files. TLS protects transport; the Pi and Google are trusted storage endpoints. No end-to-end cloud encryption is claimed.
+- The 128 MiB ext4 loop image caps recording disk consumption independently of hub health. Software pauses around 96 MiB; MediaMTX part buffering is capped at 8 MiB. Disk/CPU/RAM behavior on the Pi remains to be measured.
+- Checksums verify completed recording bytes before local deletion. MD5 here matches Drive's integrity checksum; it is not used for authentication or encryption.
+- Temporary cleanup queries indexed expiry-day properties and catches up from a durable date cursor. Trash is recoverable initially and continues consuming Google quota.
+- Large user files are forwarded in bounded chunks; Android uploads are foreground-only, cancellable, and request consent on metered networks.
+- Account connection and recording remain opt-in. Existing identities, permissions, installed app ID, and APK signer must be retained.
+
+The preserved v0.7.0 protocol baseline follows:
+
+# Preview protocol and security boundaries
+
+This preview adds a Raspberry Pi hub and live-camera integration to the source available in this workspace, which is OneSpace v0.6.2. The later v0.11/v2 projects described in the handoff were not attached. This package does not certify those later projects or replace their native UI work.
+
+## Communication paths
+
+| Path | Transport and purpose | Availability |
+|---|---|---|
+| Existing Windows ↔ Android LAN sharing | Existing pinned HTTPS API on TCP 47601 and UDP discovery on 47602 | Independent of Pi and Internet |
+| Direct access through an approved private overlay | Existing pinned OneSpace endpoint over a separately installed overlay | Both endpoint devices must be online; explicit overlay admission is required |
+| Pi clipboard broker | Pinned HTTPS on TCP 47603, scoped bearer credentials and event-woken long polling | Text messages only in this initial broker protocol |
+| Pi media command broker | Same scoped event protocol | Target must consent and be online to execute; commands expire quickly |
+| Live camera signaling | Authenticated WHEP SDP through the Pi hub to fixed loopback MediaMTX | Camera viewing permission required |
+| Live camera video | WebRTC media to MediaMTX, with ICE connectivity through the LAN/private overlay | HTTP page/signaling reachability alone does not prove media reachability |
+| Camera recording, retention and playback archive | Deferred | Not implemented or enabled in this preview |
+
+Tailscale/WireGuard is an optional deployment layer, not an embedded VPN or a replacement for OneSpace authorization. Tailscale may use external coordination and relay infrastructure. A private tunnel does not automatically permit a device to copy a clipboard, view the camera, or control media. Headscale/custom relay infrastructure and automatic universal NAT traversal are outside this preview.
+
+## Hub identity and enrollment
+
+The hub has its own TLS identity, stored separately from every existing Windows identity. Verify its SHA-256 certificate fingerprint through a trusted local channel before saving a client profile. Do not accept a fingerprint supplied only by an untrusted discovery response. Damaged existing identity files must produce an error, not silent key regeneration.
+
+Provision hub devices using the local administrative CLI. Enrollment credentials are sensitive and should be transferred only through a trusted local channel. Hub API credentials are scoped, unique per enrolled device, and must not be shared across Windows and Android. Unspecified new hub scopes are denied. Existing legacy pairing and its storage remain separate from hub enrollment.
+
+The public hub information endpoint establishes neither pairing nor readiness. Device presence is based on recent authenticated activity and can lag an abrupt network loss. The interface must distinguish stored pairing, reachable service, active camera publisher, and actual decoded frames.
+
+## Event delivery
+
+The hub event API uses stable caller-supplied operation IDs for idempotency, a bounded shared queue with recipient-specific delivery, expiration and explicit recipient acknowledgements. A successful enqueue means queued; it does not mean the recipient pasted the text or executed the command. An acknowledgement records recipient processing, not proof that a third-party app accepted a paste. The initial queue limit is 256 events total, 128 enrolled devices, and 64 KiB per server text event; the client UI/sender policy is tighter at 16 KiB. New pending clipboard text from the same sender to the same recipient replaces older pending text. A single device can exhaust the shared queue with other permitted work, so quotas per sender remain a future improvement.
+
+Clipboard and media commands have different lifetimes. A stale clipboard must not unexpectedly replace current user content, and a delayed media command must not execute minutes later. Receiver-side feature switches and platform permissions remain authoritative even if hub authorization succeeds. Clients must not automatically replay an uncertain legacy POST through a different transport and claim exactly-once delivery.
+
+The default copied-text route remains the existing LAN route. The preview exposes an explicit hub route rather than replaying uncertain legacy writes through both routes. Media dispatch is best effort with at-most-once receipt-before-action handling: a crash between that receipt and an OS action can lose a command. The protocol does not promise exactly-once operating-system actions. Durable message queues are not a distributed consistency service for tasks/notes in this preview. File relay, resumable brokered image/file transfer, conflict-free notes and distributed release-code allocation remain future work.
+
+## Encryption and storage
+
+Each client-to-hub connection is encrypted and authenticated using the pinned hub certificate and a scoped credential. WebRTC encrypts the media transport. These protections are not a claim that the hub is blind to content: it terminates TLS, processes brokered clipboard text, and runs MediaMTX as the camera endpoint.
+
+This initial hub uses bounded local metadata storage rather than a heavy service framework. Clipboard event payloads may exist as plaintext in that protected state file until acknowledged/expired and purged. Clipboard events expire after 60 seconds, media commands after 15 seconds; idle expiry is swept every five seconds. Digest-only idempotency receipts remain briefly after delivery. Filesystem permissions, short retention and bounded queues reduce exposure; they do not replace disk encryption. Do not describe the broker as end-to-end encrypted between Windows and Android or zero knowledge. Host compromise can expose clipboard text and camera video.
+
+Android hub credentials use a separate Android Keystore-backed profile. The existing PC profile, Keystore alias and application ID remain compatible. Windows hub credentials use per-user DPAPI protection and must never appear in a dashboard response or logs. The non-Windows development adapter is base64 in an owner-only file, not an OS vault; it is not intended as protected Linux desktop credential storage. Certificate fingerprints are public identity checks; bearer tokens and private keys are secrets. Changing the Windows hub address or fingerprint requires supplying its new scoped credential rather than forwarding the old one to a different endpoint.
+
+## Camera boundary
+
+Only the configured loopback MediaMTX WHEP endpoint may receive forwarded signaling. A client cannot choose an arbitrary upstream URL. The gateway must reject redirects, oversized SDP, cross-origin session locations and deletion of another device's session. It should bind a session to the same enrolled device and require current camera scope for further operations.
+
+Authorization on initial WHEP creation alone does not revoke an already established video session. The gateway revalidates sessions every 15 seconds and requests upstream deletion for revoked/expired sessions; network failure can delay actual upstream teardown. The default session lifetime is one hour and the Pi-oriented default permits two viewers. Graceful shutdown deletes known sessions. An abrupt crash can prevent this cleanup, so restarting the upstream media service may be necessary. Do not assume closing the OneSpace signaling page instantly stops an independent WebRTC connection.
+
+Keep RTSP publishing and MediaMTX management private. Permit only required media ports on a trusted LAN/overlay, disable unused listeners, and preserve the user-tested single-capture/single-encoder pipeline. No SD-card recording is configured in this preview. “Recording disabled” does not imply that no control metadata or bounded logs are written.
+
+## Platform and verification limits
+
+Android 10+ background clipboard restrictions, service lifecycle limits, battery policies and user force-stop remain in force. Opening a remote tunnel does not grant background clipboard reading or silent power control. Live playback should stop when its screen closes and must not silently acquire microphone or camera permissions.
+
+The supplied automated checks exercise local server protocols, negative authorization cases and pure policy logic. Linux clipboard stubs cannot validate Windows clipboard behavior. A fake WHEP upstream can validate signaling routing and ownership checks, not real camera encoding, ICE connectivity, delivered FPS or Android WebView decoding. Pi ARM64 compilation does not demonstrate execution on the physical Pi.
+
+Before treating the build as a stable deployment, test the actual Pi power health, camera pipeline, overlays on different networks, native Windows clipboard/media execution, Android background behavior, same-key APK upgrades and disconnect/revocation recovery. No zero-bug, zero-latency or measured battery-improvement claim is made.
+
+## v0.9.0 OneSpace Connect and Pi update service
+
+The built-in PC relay requires no VPN application. It uses HTTP/1.1 Upgrade
+inside exact-pinned hub TLS, then carries the original independently pinned PC
+TLS connection. No new cryptographic algorithm or unauthenticated arbitrary-host
+proxy is introduced. The Pi cannot read the PC password, bearer token or file
+contents in that inner connection. The existing short hub-text queue remains a
+separate trusted-Pi plaintext queue; do not confuse its security properties.
+
+- POST /hub/v1/connect/listen registers an outbound receiving connection.
+- POST /hub/v1/connect/open?to=DEVICE selects an enrolled receiver, never an IP.
+- Both sides require connect scope. Requests need bodyless HTTP/1.1, Connection:
+  Upgrade and Upgrade: onespace-connect-v1. Success returns 101.
+- A receiver waits for a single byte 0x01 before starting its PC TLS server.
+  The sender immediately starts its PC TLS client after its 101 response.
+- At most 10 sockets per device and 32 total. Receivers expire after 15 minutes;
+  active pairs expire after one hour and have sliding 90-second I/O limits.
+- Revocation/scope removal is rechecked every second; closing the hub closes
+  its hijacked connections. Relay buffers are bounded, without file staging.
+- Windows uses four workers and kernel network/address-change notifications.
+  Normal shutdown, profile changes and resume rebuild outbound connections.
+- Android selects and verifies a route before writes. OkHttp retries and
+  redirects are disabled. An uncertain POST/upload is not automatically replayed.
+  A connection failure invalidates its route cache; reads may recover safely.
+- The Pi remains private-ingress-only unless --allow-public is explicitly set.
+  Opt-in public ingress has 128 total sockets and 16 per IP, before TLS. Firewall
+  and public reachability remain deployment responsibilities. No hosted relay,
+  automatic router configuration, STUN/TURN service or NAT guarantee is supplied.
+
+Pi updates: GET /hub/v1/updates/manifest and /apk require updates scope.
+PUT /hub/v1/updates/apk and POST /hub/v1/updates/reserve require updates.publish.
+APKs are capped at 150 MiB. Package/version metadata is parsed from compiled
+AndroidManifest.xml; bytes are SHA-256 hashed. Publication is atomic and rejects
+codes <= the current release. This publisher does not verify the APK signature;
+only trusted publishers may submit. Android still compares the archive signer
+to its installed signer and requires the OS installer's final approval.
+The manifest retains the existing /v1/update/apk downloadPath contract; Android's
+selected transport maps it to the fixed hub endpoint rather than trusting a URL.
+
+The shared version counter is serialized, fsynced and monotonic across restart.
+Use one authority and the actual published floor on all builders. Local counters
+alone do not coordinate multiple independent release machines.
+
+The native Windows UI retains the authenticated local handlers in-process.
+The video component is isolated in a child process, uses fixed local content,
+denies browser permissions, blocks external web resources, and requires a
+per-viewer random proof for camera RPC. Hub tokens never enter its document.
+The locally vendored WebView2 wrapper adds only a constructor configuration hook;
+its upstream licences and loader notices are retained. Native UI/device execution
+and deployment security checks are still required before a production release.
+
+
+
+================================================================================
+APPENDIX E — SECURITY NOTES (HISTORICAL BASELINE + CURRENT BOUNDARIES)
+Source: /workspace/onespace/SECURITY.md
+================================================================================
+
+# OneSpace security notes — developer prototype
+
+## Implemented protections
+
+- Android manually pins the **SHA-256 fingerprint of the Windows TLS certificate**. The Android client checks the certificate hash and expiry before transmitting the ecosystem password or sharing data. A user must copy and verify the fingerprint from the trusted Windows PC, *not from an unsolicited network message*.
+- Password authentication is performed inside that certificate-pinned encrypted channel. The desktop stores a salted PBKDF2-HMAC-SHA256 password verifier (200,000 iterations), never a plaintext password. Pairing is rate limited and requires an approval on the Windows dashboard.
+- Every approved Android instance receives a 256-bit random bearer credential. Android encrypts its credential using a key generated by Android Keystore; Windows stores its pairing data in the current user's profile directory, where standard Windows user permissions apply.
+- The LAN service refuses non-private source IPs and exposes only TLS on port 47601. The local web dashboard is bound to loopback 127.0.0.1:47600, requires a secret per-process header for API calls, and does not grant CORS access to third-party websites.
+- Windows remote power commands are opt-in, queued for confirmation on the PC, expire after two minutes and cannot force-close unsaved documents directly through an untrusted phone connection.
+- Uploaded filenames are sanitized, and path-based download operations use server-owned file metadata rather than untrusted paths.
+
+## Before any public release
+
+- **Do a real security review and penetration test.** Encryption and unit tests do not prove the software is bug-free or suitable for sensitive enterprise data.
+- Encrypt the stored Windows device tokens at rest with DPAPI or another OS-provided key store (in 0.1.0, app data under the user's profile contains persisted bearer tokens).
+- Implement secure credential rotation, recovery, certificate renewal, onboarding QR code with independent authentication, and device permission granularity.
+- Improve network threat model for proxying and local network segmentation. Never open the LAN service to the public internet without a properly designed relay/identity protocol.
+- Audit software supply chain and reproducible builds; obtain executable and APK signing certificates for production.
+- Verify idle wakeups, scoped storage policies, BLE access, clipboard and background service restrictions on actual Android releases.
+
+## Android platform limits
+
+- Modern Android restricts background clipboard access and automatically running long-term foreground data-sync services. The present companion performs clipboard actions explicitly from its UI or Android Share menu. Capturing within OneSpace is supported as a workflow; intercepting every external camera shot indefinitely is not promised.
+- Ordinary Android apps cannot silently enable Bluetooth on modern versions or simply reuse another host's Bluetooth pairing by copying a MAC address.
+- Ordinary third-party apps cannot silently shut down/reboot a personal Android handset. We intentionally do not offer unsupported privilege-escalation methods.
+
+
+## Local APK updates (new preview)
+
+- Windows desktop Update Center requires its local authorization key to upload an APK. Remote endpoints require an enrolled Android device bearer token and TLS, plus the Android client pins the PC certificate fingerprint.
+- Windows limits updates to 150 MiB, computes SHA-256 and publishes immutable metadata for the current update while protecting reads and writes with an update lock. Windows checks a ZIP header, **not** the APK signature: the APK must be from a trusted release process.
+- Android downloads in chunks into a temporary file, checks the hash, file size, package name, version code, and archive signing certificates against the installed app before requesting OS installation. Android performs its own independent final package-signature check and requires user approval.
+- The update mechanism supports the current signing identity, but does not yet support APK signing-key rotation. Keep the same `.jks` key for all builds.
+- The current dashboard does not validate APK signature or version metadata itself. Never publish untrusted content. Compromised Windows credentials or a stolen signing key are outside the protections of ordinary TLS transport.
+
+## v0.9.0 development boundary
+
+See docs/PROTOCOL-AND-SECURITY.md for the opt-in built-in relay/public ingress,
+separate update-publisher scope, nested PC TLS and isolated video-component model.
+This preview has not had a penetration test. The Go vulnerability database was
+inaccessible in the cloud workspace, so dependency scanning is not marked passed.
+The branch-limited GitHub Actions security job can run from a permitted network.
+Existing Windows PC pairing tokens retain the original profile format and OS
+user-file protection; the newer hub token uses DPAPI. No blanket claim that all
+old profile secrets are encrypted at rest is made. Preserve private backups and
+use appropriate operating-system account/disk protections.
+
+
+
+================================================================================
+APPENDIX F — COMPONENTS AND LICENCES
+Source: /workspace/onespace/THIRD-PARTY.md
+================================================================================
+
+# Third-party components
+
+OneSpace owns its application, pairing, routing and permission logic. It uses
+established components rather than custom cryptography or video codecs.
+
+| Component | Version | Role | Licence / distribution |
+|---|---|---|---|
+| Go standard library | Toolchain recorded in validation | TLS, HTTP, networking, OS controls | Go BSD-style, included under licenses/ |
+| OkHttp | 4.12.0 | Android HTTP and streaming with per-PC pinning | Apache-2.0, included under licenses/ |
+| Okio | 3.6.0 | Bounded Android streaming | Apache-2.0; https://github.com/square/okio/blob/master/LICENSE.txt |
+| Kotlin runtime | 2.2.20 | Android application runtime | Apache-2.0; https://github.com/JetBrains/kotlin/blob/v2.2.20/license/LICENSE.txt |
+| go-webview2 | 56598839c808 | Windows video surface only | MIT, included under licenses/; local one-callback patch documented in its source |
+| go-winloader | c1995be93bd1 | Loads the SDK video-component loader | ISC, included under licenses/ |
+| golang.org/x/sys | 0.31.0 | Windows network notifications and OS interfaces | BSD-style, included under licenses/ |
+| Microsoft WebView2Loader | Upstream wrapper's pinned SDK binary | Windows video component loader | Redistributable licence included under licenses/ |
+| Microsoft WebView2 Runtime | User's maintained OS runtime | H.264/WebRTC playback | Microsoft runtime terms; not bundled or silently installed |
+| MediaMTX | 1.21.2 | Pi live video and MP4 segments | MIT, included under licenses/; official archive checksum verified |
+| GStreamer / libcamera | Existing Kali packages | Hardware camera capture | Supplied by the OS; not redistributed in this ZIP. Package/plugin licences vary. Existing working capture is preserved. |
+| Google Drive API / OAuth | Service | Required large storage | Google service terms and the user's existing account/quota apply; no Gmail-reading permission |
+
+Tailscale is optional compatibility support, not bundled or required by
+OneSpace Connect. No third-party hosted messaging platform, cloud AI service
+or VPN account is required for the built-in PC relay. Remote access still
+requires a reachable Pi or another separately provisioned reachable endpoint.
+
+Keep these notices with redistributed binaries. This inventory describes the
+components in this build; it is not a guarantee that a provider or dependency
+will remain available forever. Runtime and OS security updates remain necessary.
+
+
+
+================================================================================
+APPENDIX G — GOOGLE DRIVE SETUP DETAILS (USE CURRENT GUIDE FOR OTHER SETUP)
+Source: /workspace/onespace/DRIVE-SETUP.md
+================================================================================
+
+# Google Drive storage and camera recording · v0.8.0 preview
+
+This package adds Google Drive integration to the existing OneSpace preview.
+It does not sign into, upload to, or modify your actual account until you
+configure and run it. Your Gmail address identifies your Google account;
+OneSpace does not request permission to read Gmail.
+
+## What you get
+
+- Windows: **Cloud & recordings** in the dashboard.
+- Android: **Pi Hub → Cloud storage & recordings**, behind device unlock.
+- Upload large files, create text files, view the app's Drive files, open them
+  in Google Drive, change Temporary/Permanent policy, and move files to Trash.
+- Resume a file by selecting the same original filename, size **and contents**.
+  The source file remains on the sending device. Pending sessions belong to
+  the device token that started them; each device sees only its own file jobs.
+- Record the existing Pi camera stream into short H.264 MP4 segments and
+  upload completed segments to Drive. Live view remains available.
+- A seven-day temporary default, adjustable from 1–365 days. The lifetime starts after upload verification. Existing files
+  retain their policy until explicitly changed. Permanent means keep until
+  you delete; it does not mean immutable or immune to Google account policies.
+
+## 1. Preserve your installation
+
+- Keep the previous package as a rollback copy.
+- Back up the stopped hub's `/var/lib/onespace-hub` securely, including its
+  certificate, device records, and any pending clips. Do not share this backup.
+- Keep Windows `%AppData%\OneSpace`, its identities and pairing data.
+- Build Android with your **original release signing key**, same application ID
+  `com.onespace.companion`, and a code above your actual installed/published
+  maximum. This source starts at code 18; refresh the published floor if your
+  real app is newer. Cloud-built debug signing is not a compatible update.
+- This branch extends the source available here; later unprovided v0.11/v2
+  source is not included or overwritten.
+
+## 2. Install the hub and bounded recording buffer
+
+Use the ARM64 binary for the documented aarch64 Kali installation. Check the
+Pi's power supply first: previously reported `get_throttled=0x50005` indicates
+an active power/throttling problem. Recording cannot repair undervoltage.
+
+```sh
+sudo systemctl stop onespace-hub.service
+sudo ./hub/deploy/install-hub.sh ./bin/onespace-hub-linux-arm64
+sudo ./hub/deploy/setup-recording-buffer.sh
+```
+
+The buffer setup is a **first-time, opt-in root script**. Read it first. It
+creates a new 128 MiB image file on the SD card, formats that file as ext4, and
+mounts it at `/var/lib/onespace-hub/drive/spool`. It never formats a disk or
+partition, refuses an existing image, and refuses to hide existing footage.
+It also makes hub startup depend on the mount. Install `e2fsprogs`/`util-linux`
+if their tools are missing. Keep at least 512 MiB free outside this image.
+
+This is a hard filesystem capacity limit, not 128 MiB of Pi RAM. It bounds SD
+usage even if the hub crashes or recording control fails. The hub normally
+pauses near 96 MiB buffered or below 8 MiB available in the buffer. It requires
+a distinct 64–256 MiB recording filesystem before enabling recording; you can
+provision an equivalent filesystem yourself instead of running the script.
+
+Do not put backups, Google credentials, or other user files inside this mount.
+Do not run the setup script on every update. A failed setup is reported and
+does not start recording. Review any partial installation before retrying;
+never delete an existing image that may hold footage.
+
+## 3. Configure MediaMTX without changing capture
+
+- Keep your existing OV5647/libcamera hardware capture command unchanged; it
+  still publishes `rtsp://127.0.0.1:8554/camera`.
+- Review `hub/deploy/mediamtx-drive-recording.example.yml` against your actual
+  MediaMTX v1.21.2 configuration. Save a backup before installing it.
+- The example starts with `record: false`. It enables the management API only
+  on `127.0.0.1:9997`, and grants API/publish/read only to loopback callers.
+- Preserve your reachable WebRTC LAN/Tailscale ICE host configuration.
+- Install the reviewed example as `/etc/onespace-hub/mediamtx.yml` only after
+  checking your existing settings. Recording output and the completion hook
+  must match `/var/lib/onespace-hub/drive/spool/camera`.
+- If using our systemd examples, review `onespace-mediamtx-drive.service` and
+  install it **as the existing `onespace-mediamtx.service`**, not as a second
+  competing MediaMTX service. Back up that unit first.
+- This optional transport unit runs as `onespace-hub` so it can write the
+  owner-only buffer. The camera capture service remains separate. Do not run
+  two MediaMTX processes on the same ports.
+- The recording transport depends on the hub: stopping/restarting the hub
+  also stops it. Start MediaMTX again after hub maintenance. This safeguards
+  recording lifecycle; the hard filesystem cap provides independent protection.
+
+Do not expose RTSP, the management API, or raw WHEP signaling on public
+interfaces. Keep HTTPS 47603/WebRTC media limited to trusted LAN/overlay peers.
+The existing live-only example remains available if you disable recording.
+
+## 4. Create your own Google OAuth client
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/), create or
+   select a project, and enable **Google Drive API**.
+2. Configure Google Auth Platform consent for your personal application.
+   During Testing, add your own Google email as a test user.
+3. Create an OAuth client of type **Desktop app**, then download its JSON.
+4. Copy that JSON privately onto the Pi, readable by `onespace-hub`, with
+   owner-only permissions. For example, store it at
+   `/var/lib/onespace-hub/google-desktop-client.json`, owner `onespace-hub`,
+   mode `0600`. Do not paste it or tokens into chat or commit them.
+
+Only `https://www.googleapis.com/auth/drive.file` is requested. This permits
+OneSpace-created files; the app does not list or delete unrelated Drive files.
+Your ordinary browser/Google app can still access your account normally.
+Google organizational restrictions may block consent. Refresh tokens for an
+external app left in **Testing** generally expire after seven days for this
+scope; use the appropriate production consent configuration for durable use.
+Google may still require reauthentication or revoke credentials later.
+
+## 5. Connect your account locally
+
+Stop the hub first: CLI operations use its exclusive metadata lock. If you
+have a browser on the Pi, run:
+
+```sh
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub drive-connect \
+  --data /var/lib/onespace-hub \
+  --oauth-client /var/lib/onespace-hub/google-desktop-client.json
+```
+
+Open the sign-in URL printed in your **local terminal** and complete Google
+consent. The callback listens only on Pi loopback port 53682 for five minutes.
+Do not share the URL. The flow uses state verification and PKCE.
+
+For a headless Pi, first open an SSH session **from the PC browser's machine**:
+
+```sh
+ssh -L 53682:127.0.0.1:53682 YOUR_PI_USER@YOUR_PI_ADDRESS
+```
+
+Run the same `drive-connect` command inside that session, then open its URL
+in the PC's browser. The loopback callback travels through SSH. Do not open
+53682 on your router or bind the callback publicly. If the port is occupied,
+choose a different `--oauth-port` and match both SSH tunnel ports.
+
+The refresh credential is saved on the Pi as an owner-only file; it is never
+returned to Windows/Android. A protected filesystem is still necessary because
+anyone who compromises the Pi account can read its files. This preview does
+not provide end-to-end encryption against Google or a compromised Pi.
+
+## 6. Grant cloud permissions explicitly, retaining your current tokens
+
+While the hub is stopped, replace `phone` / `windows` with your existing IDs:
+
+```sh
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub permissions \
+  --data /var/lib/onespace-hub --id phone \
+  --scopes clipboard,media,camera,cloud,recording
+sudo -u onespace-hub /opt/onespace-hub/bin/onespace-hub permissions \
+  --data /var/lib/onespace-hub --id windows \
+  --scopes clipboard,media,camera,cloud,recording
+```
+
+These commands replace the selected device's scope list, preserve its existing
+token, and do not revive revoked devices. Include every old scope you wish to
+keep. `cloud` permits managing the shared OneSpace Drive files; recording
+control additionally requires both `camera` and `recording`. Grant the minimum
+permissions each device needs. Existing devices gain no new scopes silently.
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl start onespace-hub.service
+sudo systemctl start onespace-mediamtx.service
+```
+
+Check `journalctl -u onespace-hub -u onespace-mediamtx` locally if startup fails.
+The hub's source address/certificate/device-token checks still apply. Pair it
+through your LAN or private overlay as described in START-HERE.md.
+
+## 7. Use it in OneSpace
+
+- Windows: launch `bin/OneSpace-Windows-v0.8.0-Drive-Preview.exe`, keep your
+  existing profile, configure/verify the hub, then open **Cloud & recordings**.
+- Android: build/install a correctly signed compatible update in Android
+  Studio; open **Pi Hub → Cloud storage & recordings** and unlock.
+- Press Refresh to verify your connected Google email, quota and file access.
+  Merely having a saved credential is not proof current Google access works.
+- Upload a test file or create a note; it should appear in the app-created
+  `OneSpace` folder and in the file list. Open it in Drive to check it.
+- Choose Temporary/Permanent and temporary days. Start recording, then refresh
+  status. An enabled MediaMTX setting is not proof of frames: check new playable
+  MP4 clips arriving in Drive. Stop recording explicitly when finished.
+- You can keep a temporary file permanently or set a permanent file to expire.
+  Moving to Trash requires a user confirmation. Expiry is automatic while the
+  hub and Google access work, with periodic cleanup and retries after outages.
+- File upload is foreground-only in this preview. Android pauses/cancels on
+  leaving the protected screen and asks before large metered-data uploads.
+  Select the same source again to resume. Temporary sessions can expire at
+  Google; the app then restarts safely with the same allocated remote file ID.
+
+## Storage, speed and limits
+
+- 15-second MP4 target segments, cut on keyframes. Rotation is approximate.
+  The current segment is uploaded after completion, not byte-for-byte live.
+- File upload uses 1 MiB chunks, with a single recording uploader. Large user
+  files are never staged completely on the Pi. Video uses the bounded buffer.
+- At 5 Mbit/s, continuous footage is about **54 GB/day** before overhead. It
+  needs sustained upload bandwidth above that bitrate. 5 TB is about 92 days
+  at that rate **before other usage and Trash**, not unlimited recording.
+- Temporary cleanup moves files to Drive Trash. It does not immediately free
+  quota. Google normally removes Trash after 30 days; empty it yourself when
+  needed. OneSpace does not permanently purge your Drive Trash automatically.
+- Uploads use HTTPS; hub clients use pinned TLS. Recording checksums are checked
+  against Drive before local deletion. Google can read ordinary uploaded MP4s;
+  storage is not an opaque end-to-end encrypted vault.
+- Internet loss/expired sign-in/full Drive pauses progress. Completed clips
+  remain locally until verified, then are removed. The buffer cannot retain an
+  indefinite outage; capture pauses and gaps are visible/expected.
+- Power loss may leave the current segment unfinalized. It is not automatically
+  uploaded or silently discarded. Inspect/repair it locally with media tools;
+  do not mark arbitrary partial files complete. Completed clips remain queued.
+- No Drive cloud relay for instant clipboard/live video: existing direct/hub
+  text and WebRTC paths remain separate.
+- Test on your Pi and account before relying on this for CCTV. This has not
+  been deployed to your hardware or signed with your Android release key.
+
+To disconnect, stop the hub and run `onespace-hub drive-disconnect --data
+/var/lib/onespace-hub` as `onespace-hub`; this revokes the Google grant and
+removes the saved credential. It does not delete your Drive files. If Google
+cannot be reached, revoke OneSpace in your Google Account and secure the local
+credential file until you can complete cleanup. Reconnecting a different
+account is not an automatic migration of this account's root folder/jobs.
+
+
+
+================================================================================
+APPENDIX H — CURRENT DEVELOPMENT NOTES
+Source: /workspace/onespace/DEVELOPMENT.md
+================================================================================
+
+# Independent OneSpace development
+
+The first native-screen increment has been expanded into v0.9.0 Independent
+Preview. See README.md, SETUP-v0.9.0.md and VALIDATION.md for the current build.
+
+Implemented: native Windows control pages, isolated video component, built-in
+end-to-end PC TLS relay, LAN preference and optional Pi LAN/remote addresses,
+Windows OS network/resume notifications, Pi-hosted APK publication/download,
+shared version codes, and managed camera service installation.
+
+Still external setup/hardware gates: actual Pi reachability and firewall,
+Google consent, original Android signing key, physical Windows native UI and
+WebView2/Android lifecycle tests, Pi camera/power/memory/SD tests. General-purpose
+STUN/TURN peer traversal and a hosted public relay are not provided. Native UI
+uses Win32 controls rather than a WinUI 3 redesign. No security or performance
+percentage claims are inferred from builds and fixture tests.
+
+
+
+================================================================================
+APPENDIX I — EXACT UNCOMMITTED DIAGNOSTIC DIFF
+================================================================================
+diff --git a/.github/workflows/independent-validation.yml b/.github/workflows/independent-validation.yml
+index dd428d6..4268d28 100644
+--- a/.github/workflows/independent-validation.yml
++++ b/.github/workflows/independent-validation.yml
+@@ -11,8 +11,8 @@ jobs:
+     runs-on: windows-latest
+     timeout-minutes: 20
+     steps:
+-      - uses: actions/checkout@v4
+-      - uses: actions/setup-go@v5
++      - uses: actions/checkout@v5
++      - uses: actions/setup-go@v6
+         with:
+           go-version: '1.27.x'
+           cache-dependency-path: windows/go.sum
+@@ -28,8 +28,8 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 15
+     steps:
+-      - uses: actions/checkout@v4
+-      - uses: actions/setup-go@v5
++      - uses: actions/checkout@v5
++      - uses: actions/setup-go@v6
+         with:
+           go-version: '1.27.x'
+           cache-dependency-path: windows/go.sum
+diff --git a/tools/Test-NativeWindows.ps1 b/tools/Test-NativeWindows.ps1
+index 931fea5..0da9f64 100644
+--- a/tools/Test-NativeWindows.ps1
++++ b/tools/Test-NativeWindows.ps1
+@@ -36,6 +36,17 @@ try {
+     $process.CloseMainWindow() | Out-Null
+     if (-not $process.WaitForExit(10000)) { throw 'Closing native window did not stop engine' }
+     Write-Output 'Native window, navigation, note persistence and shutdown passed.'
++} catch {
++    # Publish the actual UI error as an annotation, not only a generic exit code.
++    # Do not include profile contents: profiles can contain pairing credentials.
++    $failure = $_.Exception.Message
++    $annotation = $failure.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
++    Write-Output ('::error title=Native Windows smoke test::' + $annotation)
++    if ($env:GITHUB_STEP_SUMMARY) {
++        $summary = "Native Windows smoke test failed.`n`n" + $failure + "`n`n" + $_.ScriptStackTrace
++        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $summary
++    }
++    throw
+ } finally {
+     if ($null -ne $process -and -not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
+     Remove-Item $profileRoot -Recurse -Force -ErrorAction SilentlyContinue
+
+
+
+APPENDIX J — GIT STATE AT HANDOVER
+## dev/onespace-independent-connect
+ M .github/workflows/independent-validation.yml
+ M tools/Test-NativeWindows.ps1
+
+7d7a1fa Integrate native Windows controls and end-to-end PC connectivity through Pi
+0fe4364 Add native Windows dashboard preview and verified Android route selection
+3343572 Add OneSpace v0.8.0 Drive recording preview for testing
