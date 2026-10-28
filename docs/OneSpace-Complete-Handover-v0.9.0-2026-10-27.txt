@@ -34,6 +34,16 @@ Validation update (28 October 2026):
 - Hub full-suite execution remains blocked by pre-existing Windows filesystem
   permission and publication-directory failures; coordination/camera packages
   and hub vet remain passing.
+- CI run 40744830031
+  (https://github.com/ironsensey/onespace/actions/runs/40744830031) completed
+  with Windows and security jobs passing, but `linux-camera` failed at
+  `go test -race -p 1 ./...` before either media job. Reproduction:
+  `go -C hub test -race -p 1 ./...` on Ubuntu. The failures report
+  `hub data directory must be owner-only (chmod 700)` across hub tests; the
+  same run records publication-directory and credential-permission failures
+  in the existing full suite. Direct decoded frames, selected ICE pairs, and
+  coturn relay results are blocked and must not be claimed. No test was
+  weakened and no further retry was performed.
 - No decoded-frame, selected-candidate, coturn, physical-device, or
   Internet-reachability evidence exists yet.
 
