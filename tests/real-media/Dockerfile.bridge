@@ -1,0 +1,12 @@
+FROM golang:1.23-bookworm AS build
+WORKDIR /src
+COPY hub/go.mod ./hub/
+COPY hub/coordination ./hub/coordination
+COPY hub/cmd/onespace-camera-bridge ./hub/cmd/onespace-camera-bridge
+RUN cd hub && CGO_ENABLED=0 go build -o /out/onespace-camera-bridge ./cmd/onespace-camera-bridge
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=build /out/onespace-camera-bridge /onespace-camera-bridge
+COPY tests/real-media/test.crt /usr/local/share/ca-certificates/onespace-real-media-test.crt
+RUN update-ca-certificates
+ENTRYPOINT ["/onespace-camera-bridge"]

@@ -21,6 +21,19 @@ HOW TO READ THIS FILE
 6. No private signing keys, account credentials, tokens or device profiles are
    included. Placeholder configuration values need the user's real private data.
 
+Validation update (28 October 2026):
+- The native Windows UI smoke script passed.
+- Android debug and unsigned release builds, debug unit tests and debug lint
+  passed. The debug APK has one v2 signer; the release output is intentionally
+  unsigned and is not installable until signed with the original key.
+- The reproducible real-media fixture is present at `tests/real-media`, but was
+  not run because this Windows host has no Docker/Linux runner.
+- Hub full-suite execution remains blocked by pre-existing Windows filesystem
+  permission and publication-directory failures; coordination/camera packages
+  and hub vet remain passing.
+- No decoded-frame, selected-candidate, coturn, physical-device, or
+  Internet-reachability evidence exists yet.
+
 1. USER VISION AND PRIORITIES
 -----------------------------
 - OneSpace is a local-first Windows + Android ecosystem, extended with a Kali

@@ -1,0 +1,58 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.2
+    command: ["/mediamtx", "/config/mediamtx.yml"]
+    volumes:
+      - ./mediamtx.yml:/config/mediamtx.yml:ro
+    ports: ["8889:8889", "8189:8189/udp"]
+
+  publisher:
+    image: jrottenberg/ffmpeg:6.0-alpine
+    depends_on: [mediamtx]
+    command:
+      - -re
+      - -f
+      - lavfi
+      - -i
+      - testsrc=size=320x240:rate=10
+      - -c:v
+      - libx264
+      - -tune
+      - zerolatency
+      - -pix_fmt
+      - yuv420p
+      - -f
+      - rtsp
+      - -rtsp_transport
+      - tcp
+      - rtsp://mediamtx:8554/camera
+
+  coordinator:
+    build:
+      context: ../..
+      dockerfile: tests/real-media/Dockerfile.coordinator
+    command: ["serve", "--listen", "0.0.0.0:47604", "--cert", "/certs/test.crt", "--key", "/certs/test.key", "--devices", "/config/devices.json"]
+    ports: ["47604:47604"]
+
+  bridge:
+    build:
+      context: ../..
+      dockerfile: tests/real-media/Dockerfile.bridge
+    depends_on: [coordinator, mediamtx]
+    network_mode: host
+    command: ["--coordinator", "https://127.0.0.1:47604", "--token", "pi-test-token", "--device", "pi", "--upstream", "http://127.0.0.1:8889/camera/whep"]
+
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile.receiver
+    depends_on: [coordinator, bridge, publisher]
+    environment:
+      COORDINATOR: https://coordinator:47604
+      VIEWER_TOKEN: windows-test-token
+      VIEWER_ID: windows
+      TARGET_ID: pi
+      TURN_URL: ${TURN_URL:-}
+      TURN_USERNAME: ${TURN_USERNAME:-}
+      TURN_CREDENTIAL: ${TURN_CREDENTIAL:-}
+      FORCE_RELAY: ${FORCE_RELAY:-0}

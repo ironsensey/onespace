@@ -36,6 +36,18 @@ The repository now contains the bounded protocol implementation and Pi bridge,
 plus separate Windows and Android coordinator profiles. No public coordinator
 or TURN service is deployed.
 
+### Reproducible real-media fixture
+
+`tests/real-media` contains an opt-in Linux Docker Compose fixture. It starts
+MediaMTX 1.21.2, an FFmpeg synthetic H.264 publisher, the coordinator, the
+Pi-side bridge, and an `aiortc` receiver. The receiver waits for complete
+non-trickle ICE, requires a decoded frame, and prints the selected candidate
+pair. Run it with `tests/real-media/run.sh`; it does not use the user's Pi or
+production credentials. A TURN endpoint and short-lived credentials can be
+injected with `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`, and
+`FORCE_RELAY=1`. This fixture was not executable on the Windows development
+host because Docker/Linux were unavailable.
+
 Windows stores coordinator endpoint, certificate fingerprint, device token,
 device ID, Pi target ID, ICE server JSON and `all`/`relay` policy separately
 from the existing pinned Pi hub profile. Android stores the same coordinator

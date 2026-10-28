@@ -1,0 +1,13 @@
+FROM golang:1.23-bookworm AS build
+WORKDIR /src
+COPY hub/go.mod ./hub/
+COPY hub/coordination ./hub/coordination
+COPY hub/cmd/onespace-coordinator ./hub/cmd/onespace-coordinator
+RUN cd hub && CGO_ENABLED=0 go build -o /out/onespace-coordinator ./cmd/onespace-coordinator
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+COPY --from=build /out/onespace-coordinator /onespace-coordinator
+COPY tests/real-media/devices.json /config/devices.json
+COPY tests/real-media/test.crt /certs/test.crt
+COPY tests/real-media/test.key /certs/test.key
+ENTRYPOINT ["/onespace-coordinator"]

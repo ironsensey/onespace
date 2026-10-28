@@ -1,0 +1,11 @@
+logLevel: warn
+rtsp: yes
+rtspAddress: :8554
+webrtc: yes
+webrtcAddress: :8889
+webrtcAdditionalHosts: [mediamtx]
+webrtcLocalUDPAddress: :8189
+paths:
+  camera:
+    source: publisher
+
