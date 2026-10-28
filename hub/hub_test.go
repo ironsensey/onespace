@@ -22,6 +22,7 @@ func TestCloudPermissionUpgradePreservesExistingToken(t *testing.T) {
 	if _, ok := env.h.CheckPermission(r, "cloud"); ok {
 		t.Fatal("new cloud permission silently enabled")
 	}
+
 	if err := env.h.SetScopes("phone", []string{"clipboard", "media", "camera", "cloud", "recording"}); err != nil {
 		t.Fatal(err)
 	}
@@ -30,6 +31,7 @@ func TestCloudPermissionUpgradePreservesExistingToken(t *testing.T) {
 			t.Fatal("existing token lost after explicit upgrade")
 		}
 	}
+
 	if err := env.h.SetScopes("phone", []string{"camera"}); err != nil {
 		t.Fatal(err)
 	}
@@ -41,6 +43,25 @@ func TestCloudPermissionUpgradePreservesExistingToken(t *testing.T) {
 	}
 	if err := env.h.SetScopes("phone", []string{"cloud"}); err == nil {
 		t.Fatal("revoked device resurrected")
+	}
+}
+
+func TestOpenTightensExistingDataDirectory(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	h, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0700 {
+		t.Fatalf("data directory mode = %o, want 700", info.Mode().Perm())
 	}
 }
 

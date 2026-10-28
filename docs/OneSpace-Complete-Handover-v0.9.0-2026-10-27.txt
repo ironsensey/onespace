@@ -44,6 +44,10 @@ Validation update (28 October 2026):
   in the existing full suite. Direct decoded frames, selected ICE pairs, and
   coturn relay results are blocked and must not be claimed. No test was
   weakened and no further retry was performed.
+- The Linux permission fix tightens an existing hub data directory with
+  `chmod 700` before checking it; the owner-only assertion remains enforced.
+  Media validation is now an independent CI job, so hub-suite failures cannot
+  hide direct-frame or forced-relay results.
 - No decoded-frame, selected-candidate, coturn, physical-device, or
   Internet-reachability evidence exists yet.
 
