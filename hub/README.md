@@ -68,6 +68,65 @@ All routes require TLS. The supplied server negotiates TLS 1.3, and clients must
 | `GET /hub/v1/health` | Timestamped Go heap, goroutines, uptime, pending count and storage health; no invented camera FPS/power readings |
 | `/hub/v1/camera/status`, `/whep`, `/session/...` | Camera-scoped WHEP signaling and opaque sessions; see the Pi guide |
 
+## Self-hosted remote camera coordination
+
+`coordination` and `cmd/onespace-coordinator` provide the OneSpace-owned
+signaling broker for a future public endpoint. It uses authenticated HTTPS
+long-polling rather than a third-party relay:
+
+- `POST /v1/coord/sessions` creates a bounded viewer/Pi session.
+- `POST /v1/coord/sessions/{id}/messages?from=device` forwards only
+  `offer`, `answer`, `candidate` or `close` signaling messages.
+- `GET /v1/coord/sessions/{id}/poll?for=device` is the outbound long-poll used
+  by the Pi and clients.
+- `GET /v1/coord/requests` returns pending authorized session requests for the
+  authenticated Pi device. Delivery is retryable until the Pi acknowledges it
+  with `POST /v1/coord/requests/{id}`; polling does not silently consume a
+  request. Delivery attempts are bounded and signaling message IDs are
+  deduplicated.
+- `POST /v1/coord/requests/{id}` acknowledges successful Pi handling.
+- `DELETE /v1/coord/sessions/{id}/close?by=device` closes a session.
+
+The broker is media-blind: it never accepts RTSP, forwards WebRTC packets, or
+acts as TURN. WebRTC still uses direct ICE first and a separately operated
+coturn service only when ICE selects a relay candidate. Device authentication
+uses SHA-256 token hashes in an owner-only file; plaintext tokens are never
+logged or stored by the coordinator.
+
+Example after a controlled host has been approved and provisioned:
+
+```sh
+onespace-coordinator serve \
+  --listen 0.0.0.0:47604 \
+  --cert /etc/onespace/coordinator.crt \
+  --key /etc/onespace/coordinator.key \
+  --devices /etc/onespace/coordinator-devices.json
+```
+
+The command does not create certificates, alter firewalls, install coturn, or
+publish itself. TLS termination, firewall policy, public DNS and the outbound
+Pi/client adapters remain explicit deployment steps. The
+`cmd/onespace-camera-bridge` command is the Pi-side adapter: it polls the
+coordinator, posts the viewer offer to the fixed loopback MediaMTX WHEP
+endpoint, and returns only the SDP answer. It never carries media.
+
+Camera sessions use **non-trickle ICE**. Windows and Android wait for
+`iceGatheringState === "complete"` with a six-second timeout before sending
+the SDP offer. The Pi bridge forwards that complete offer to the fixed
+loopback MediaMTX WHEP endpoint. MediaMTX v1.21.2 accepts this WHEP
+offer/answer form; trickle candidate messages are not required by this
+contract. The coordinator device registry must contain an explicit camera
+mapping such as:
+
+```json
+{"devices":{"pi":"sha256...","android":"sha256..."}, "camera":{"pi":["android"]}}
+```
+
+Enrollment alone does not grant camera viewing. MediaMTX `Location` values
+are accepted only when they resolve to the configured loopback WHEP resource;
+the bridge deletes that resource if answer delivery, acknowledgement, expiry
+or authorization fails.
+
 Event request:
 
 ```json

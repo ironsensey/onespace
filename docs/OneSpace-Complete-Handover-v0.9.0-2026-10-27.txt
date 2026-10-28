@@ -713,7 +713,72 @@ STATUS LABELS USED BELOW
 - Connection Manager: overlay health and reachable URLs, NAT/relay status; use network handles/certs, not IP as stable device identity.
 - Remote Action Dispatcher: idempotent authenticated user-approved requests, per-device scope enforcement, confirmation for dangerous commands, audit without content secrets. Target device executes OS-native action, never Pi privilege escalation.
 - Updater/Version Coordinator: authenticated release metadata, pinned signing identities, monotonic versions, optional update artifact cache, staged rollout, rollback path; the hub is coordinator not unofficial signature issuer.
+
+11. CAMERA REMOTE-CONNECTIVITY AUDIT ADDENDUM — 28 OCTOBER 2026
+---------------------------------------------------------------
+- The preserved camera path is still libcamera/GStreamer hardware H.264 into
+  MediaMTX, with authenticated OneSpace WHEP signaling and DTLS-SRTP media.
+  Windows and Android request ICE configuration only after hub TLS pinning,
+  device authentication and the `camera` permission check.
+- Same-LAN discovery/direct operation remains the intended first path. The
+  existing Connect relay is PC API traffic only; it does not relay WebRTC
+  camera media and does not make an unreachable Pi public.
+- The self-hosted coturn installer now uses REST authentication. The Pi keeps
+  the coturn secret, and the hub derives short-lived credentials for each
+  authorized camera-status request. Permanent TURN credentials are not sent to
+  clients. This is a security improvement, not proof of Internet reachability.
+- A Pi-hosted coturn instance still requires a public IPv6 address or router
+  forwarding. A Pi behind CGNAT cannot host its own reachable TURN service.
+  The repository now includes a media-blind, bounded coordinator broker and
+  standalone HTTPS command, but Pi/client outbound adapters and deployment
+  are not yet enabled. No free unlimited public infrastructure was assumed or
+  declared. A controlled endpoint can test protocol behavior, but cannot prove
+  remote frames.
+- Verification performed in this continuation: source audit, short-lived
+  credential/configuration unit tests, and existing camera gateway tests. Full
+  hub tests on Windows retain pre-existing owner-only filesystem permission
+  failures. Physical Pi SSH was attempted at `kali@192.168.0.106` but key/
+  password authentication was unavailable. Same-LAN, separate-network,
+  mobile-data, CGNAT, forced TURN, TURN TCP/TLS, reboot, outage, lifecycle,
+  viewer-count, recording, and   WebRTC selected-candidate/frame-statistics
+  tests are UNRUN; no live frames are claimed.
+- Later controlled Pi verification started only the existing MediaMTX binary
+  and `beststream.sh` temporarily, then stopped both processes. OV5647
+  detection, libcamera 0.7.2, 1344x1008 NV12 capture, hardware H.264 and an
+  RTSP TCP reader reaching PLAYING were observed. This proves the local
+  capture/RTSP pipeline only, not authenticated WHEP frames.
+- The Windows PC was then measured as `192.168.1.62`; its route table contained
+  no route to private Pi address `192.168.0.106`, and TCP 22/47603 timed out.
+  The Windows hub profile still contains the private address. SSH access from
+  the earlier tool context therefore cannot be treated as a route available to
+  the Windows camera viewer. No cross-network WHEP, selected ICE pair or
+  decoded frame result is claimed.
 - Optional Worker Scheduler: route video transcoding/AI/file indexing to consented Windows worker when available; Pi not blocked when worker off.
+
+12. CAMERA PROTOCOL COMPLETION INCREMENT — 28 OCTOBER 2026
+------------------------------------------------------------
+- The coordinator request inbox is now retryable rather than destructive:
+  polling leaves requests pending until the authenticated target acknowledges
+  `POST /v1/coord/requests/{session}`. Delivery attempts are bounded at eight
+  per session and requests still expire with the session.
+- Signaling messages have deterministic IDs and duplicate IDs are ignored by
+  the broker. This protects retries from duplicating an SDP offer/answer.
+- The protocol is explicitly non-trickle ICE. Existing Windows WebView2 and
+  Android WebView viewers wait for ICE gathering completion with a six-second
+  bound before sending a complete offer. The bridge forwards that offer to
+  MediaMTX v1.21.2's loopback WHEP endpoint.
+- The Pi bridge validates the administrator-configured upstream as numeric
+  loopback HTTP WHEP, validates MediaMTX's `Location` under that same WHEP
+  resource, and deletes the upstream session when answer delivery or request
+  acknowledgement fails. The existing hub gateway already reaps sessions on
+  viewer stop, expiry and authorization revocation.
+- Coordinator authorization now requires an explicit `camera` target-to-viewer
+  mapping in addition to token enrollment. The standalone coordinator no longer
+  treats enrollment alone as camera permission.
+- Fixture tests passed for retry/acknowledgement, duplicate signaling,
+  loopback/Location validation and coordinator-to-WHEP answer routing.
+  Real MediaMTX decoded-frame tests, coturn forced-relay tests, Windows/Android
+  adapter fallback, separate-network tests, and Internet tests remain UNRUN.
 
 Suggested SQLite collections (proposal, not deployed): devices, trusted_keys, permissions, sessions, endpoints, sync_events, inbox_jobs, transfers, recording_segments, recording_events, motion_events, storage_quotas, audit_entries, updates, service_health. WAL mode + explicit schema migrations, backups, consistent file hashes; securely handle sensitive payloads at rest.
 
