@@ -16,7 +16,7 @@ Run:
 
 ```sh
 cd tests/real-media
-./run.sh
+sh run.sh
 ```
 
 The test is non-trickle ICE. The receiver waits for ICE gathering to complete,

@@ -1,8 +1,6 @@
 import asyncio
-import hashlib
 import json
 import os
-import ssl
 import time
 
 from aiohttp import ClientSession
@@ -63,7 +61,7 @@ async def main():
     if pc.iceGatheringState != "complete":
         raise RuntimeError("ICE gathering did not complete")
 
-    async with ClientSession(connector=None) as session:
+    async with ClientSession() as session:
         _, text = await request(
             session,
             "POST",
@@ -86,15 +84,29 @@ async def main():
             await pc.setRemoteDescription(RTCSessionDescription(answer, "answer"))
             await asyncio.sleep(10)
             stats = await pc.getStats()
+            candidates = {
+                report.id: report
+                for report in stats.values()
+                if report.type == "local-candidate" or report.type == "remote-candidate"
+            }
             for report in stats.values():
                 if report.type == "candidate-pair" and getattr(report, "state", "") == "succeeded":
+                    local = candidates.get(getattr(report, "localCandidateId", ""))
+                    remote = candidates.get(getattr(report, "remoteCandidateId", ""))
                     candidate_pair = {
                         "local": getattr(report, "localCandidateId", ""),
                         "remote": getattr(report, "remoteCandidateId", ""),
+                        "localType": getattr(local, "candidateType", ""),
+                        "remoteType": getattr(remote, "candidateType", ""),
                         "state": report.state,
                     }
             if frames < 1:
                 raise RuntimeError("SDP succeeded but no decoded video frame arrived")
+            if os.environ.get("FORCE_RELAY") == "1" and (
+                candidate_pair.get("localType") != "relay"
+                and candidate_pair.get("remoteType") != "relay"
+            ):
+                raise RuntimeError(f"forced relay did not select a relay pair: {candidate_pair}")
             print(json.dumps({"decodedFrames": frames, "candidatePair": candidate_pair}))
         finally:
             await request(session, "DELETE", f"/v1/coord/sessions/{session_id}/close?by={VIEWER}")
