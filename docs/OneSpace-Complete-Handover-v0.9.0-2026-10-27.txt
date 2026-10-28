@@ -780,6 +780,32 @@ STATUS LABELS USED BELOW
   Real MediaMTX decoded-frame tests, coturn forced-relay tests, Windows/Android
   adapter fallback, separate-network tests, and Internet tests remain UNRUN.
 
+13. CLIENT ADAPTER COMPLETION INCREMENT — 28 OCTOBER 2026
+-----------------------------------------------------------
+- Windows now stores coordinator endpoint, certificate pin, separate
+  coordinator token, device ID, Pi target ID, bounded ICE-server JSON and
+  direct/forced-relay policy separately from the Pi hub profile. The native
+  WebView2 camera viewer tries pinned local Pi WHEP first and falls back to
+  authenticated coordinator signaling. A coordinator-only profile does not
+  require a reachable local Pi URL.
+- Android now has a separate Android Keystore-backed coordinator profile and
+  pinned HTTPS API. HubCameraActivity uses the same local-first/fallback
+  behavior, preserves coordinator sessions until stop/background/replacement,
+  and closes them during lifecycle cleanup. Android exposes ICE server JSON and
+  `all`/`relay` policy settings without changing the existing application ID,
+  signing identity or Pi profile.
+- Windows full Go tests passed. Android `testDebugUnitTest assembleDebug`
+  passed with the installed SDK; only existing deprecation warnings were
+  emitted. Linux ARM64 coordinator and camera-bridge binaries and a Windows
+  executable plus unsigned debug APK were built as local review artifacts.
+- `go test -race ./coordination` remains UNRUN on this Windows environment
+  because CGO is disabled. A supported Linux runner with CGO is required.
+- A real MediaMTX + synthetic H.264 + WebRTC decoded-frame fixture and forced
+  coturn relay test remain UNRUN: no Linux MediaMTX/WebRTC receiver fixture,
+  public coordinator, TURN host, separate network endpoint or approved
+  deployment is available here. Local SDP/HTTP fixtures do not prove frames
+  or Internet reachability.
+
 Suggested SQLite collections (proposal, not deployed): devices, trusted_keys, permissions, sessions, endpoints, sync_events, inbox_jobs, transfers, recording_segments, recording_events, motion_events, storage_quotas, audit_entries, updates, service_health. WAL mode + explicit schema migrations, backups, consistent file hashes; securely handle sensitive payloads at rest.
 
 11. REAL EXAMPLES TO PRESERVE

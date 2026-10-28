@@ -23,21 +23,34 @@ import (
 )
 
 type HubConfig struct {
-	LocalAddress     string   `json:"localAddress,omitempty"`
-	Connect          bool     `json:"connect"`
-	Address          string   `json:"address"`
-	Fingerprint      string   `json:"fingerprint"`
-	Token            string   `json:"token,omitempty"`
-	Target           string   `json:"target"`
-	Enabled          bool     `json:"enabled"`
-	ClipboardMode    string   `json:"clipboardMode"`
-	ReceiveClipboard bool     `json:"receiveClipboard"`
-	AllowMedia       bool     `json:"allowMedia"`
-	OverlayCIDRs     []string `json:"overlayCIDRs"`
+	LocalAddress           string            `json:"localAddress,omitempty"`
+	Connect                bool              `json:"connect"`
+	Address                string            `json:"address"`
+	Fingerprint            string            `json:"fingerprint"`
+	Token                  string            `json:"token,omitempty"`
+	Target                 string            `json:"target"`
+	Enabled                bool              `json:"enabled"`
+	ClipboardMode          string            `json:"clipboardMode"`
+	ReceiveClipboard       bool              `json:"receiveClipboard"`
+	AllowMedia             bool              `json:"allowMedia"`
+	OverlayCIDRs           []string          `json:"overlayCIDRs"`
+	CoordinatorAddress     string            `json:"coordinatorAddress,omitempty"`
+	CoordinatorFingerprint string            `json:"coordinatorFingerprint,omitempty"`
+	CoordinatorToken       string            `json:"coordinatorToken,omitempty"`
+	CoordinatorDevice      string            `json:"coordinatorDevice,omitempty"`
+	CoordinatorTarget      string            `json:"coordinatorTarget,omitempty"`
+	CoordinatorICEServers  []cameraICEServer `json:"coordinatorIceServers,omitempty"`
+	CameraICEPolicy        string            `json:"cameraIcePolicy,omitempty"`
+}
+type cameraICEServer struct {
+	URLs       []string `json:"urls"`
+	Username   string   `json:"username,omitempty"`
+	Credential string   `json:"credential,omitempty"`
 }
 type hubDiskConfig struct {
 	HubConfig
-	ProtectedToken string `json:"protectedToken"`
+	ProtectedToken            string `json:"protectedToken"`
+	ProtectedCoordinatorToken string `json:"protectedCoordinatorToken"`
 }
 type HubEvent struct {
 	Route     string    `json:"-"`
@@ -72,6 +85,7 @@ func newHubBridge(a *App) *HubBridge {
 			token, e := unprotectHubToken(disk.ProtectedToken)
 			if e == nil {
 				disk.HubConfig.Token = token
+				disk.HubConfig.CoordinatorToken, _ = unprotectHubToken(disk.ProtectedCoordinatorToken)
 				if validateHubConfig(disk.HubConfig) == nil {
 					b.cfg = disk.HubConfig
 				}
@@ -120,6 +134,36 @@ func validateHubConfig(c HubConfig) error {
 	if c.ClipboardMode != "lan" && c.ClipboardMode != "hub" {
 		return errors.New("Clipboard mode must be lan or hub")
 	}
+	if c.CameraICEPolicy != "" && c.CameraICEPolicy != "all" && c.CameraICEPolicy != "relay" {
+		return errors.New("Camera ICE policy must be all or relay")
+	}
+	if len(c.CoordinatorICEServers) > 8 {
+		return errors.New("Too many coordinator ICE servers")
+	}
+	for _, server := range c.CoordinatorICEServers {
+		if len(server.URLs) == 0 || len(server.URLs) > 8 {
+			return errors.New("Invalid coordinator ICE server URLs")
+		}
+		for _, raw := range server.URLs {
+			u, e := url.Parse(raw)
+			if e != nil || (u.Scheme != "stun" && u.Scheme != "turn" && u.Scheme != "turns") || u.Host == "" || u.User != nil {
+				return errors.New("Invalid coordinator ICE server URL")
+			}
+		}
+	}
+	if c.CoordinatorAddress != "" || c.CoordinatorFingerprint != "" || c.CoordinatorToken != "" || c.CoordinatorDevice != "" || c.CoordinatorTarget != "" {
+		u, e := url.Parse(c.CoordinatorAddress)
+		if e != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" {
+			return errors.New("Coordinator address must be an HTTPS origin")
+		}
+		pin, e := hex.DecodeString(strings.ReplaceAll(strings.ReplaceAll(c.CoordinatorFingerprint, ":", ""), " ", ""))
+		if e != nil || len(pin) != 32 {
+			return errors.New("Coordinator certificate fingerprint must contain 64 hexadecimal characters")
+		}
+		if len(c.CoordinatorToken) < 32 || !validDeviceID(c.CoordinatorDevice) || !validDeviceID(c.CoordinatorTarget) || c.CoordinatorDevice == c.CoordinatorTarget {
+			return errors.New("Coordinator device, target and separate credential are required")
+		}
+	}
 	for _, s := range c.OverlayCIDRs {
 		_, n, e := net.ParseCIDR(s)
 		if e != nil || !safeOverlayNetwork(n) {
@@ -127,6 +171,17 @@ func validateHubConfig(c HubConfig) error {
 		}
 	}
 	return nil
+}
+func validDeviceID(value string) bool {
+	if value == "" || len(value) > 64 {
+		return false
+	}
+	for _, c := range value {
+		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') && c != '_' && c != '-' {
+			return false
+		}
+	}
+	return true
 }
 func safeOverlayNetwork(n *net.IPNet) bool {
 	for _, s := range []string{"100.64.0.0/10", "fd7a:115c:a1e0::/48"} {
@@ -484,9 +539,11 @@ func (a *App) hubLocal(w http.ResponseWriter, r *http.Request) {
 		case "GET":
 			c := b.snapshot()
 			hasToken := c.Token != ""
+			hasCoordinatorToken := c.CoordinatorToken != ""
 			c.Token = ""
+			c.CoordinatorToken = ""
 			b.mu.Lock()
-			status := map[string]any{"config": c, "hasToken": hasToken, "connected": b.connected, "lastSeen": b.lastSeen, "error": b.lastError}
+			status := map[string]any{"config": c, "hasToken": hasToken, "hasCoordinatorToken": hasCoordinatorToken, "connected": b.connected, "lastSeen": b.lastSeen, "error": b.lastError}
 			b.mu.Unlock()
 			jsonReply(w, 200, status)
 		case "POST":
@@ -504,6 +561,9 @@ func (a *App) hubLocal(w http.ResponseWriter, r *http.Request) {
 				}
 				c.Token = old.Token
 			}
+			if c.CoordinatorToken == "" {
+				c.CoordinatorToken = old.CoordinatorToken
+			}
 			c.Address = strings.TrimRight(c.Address, "/")
 			c.Fingerprint = strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(c.Fingerprint, ":", ""), " ", ""))
 			if e := validateHubConfig(c); e != nil {
@@ -515,8 +575,14 @@ func (a *App) hubLocal(w http.ResponseWriter, r *http.Request) {
 				bad(w, 500, "Cannot protect hub credential")
 				return
 			}
-			disk := hubDiskConfig{HubConfig: c, ProtectedToken: secret}
+			coordSecret, e := protectHubToken(c.CoordinatorToken)
+			if e != nil {
+				bad(w, 500, "Cannot protect coordinator credential")
+				return
+			}
+			disk := hubDiskConfig{HubConfig: c, ProtectedToken: secret, ProtectedCoordinatorToken: coordSecret}
 			disk.Token = ""
+			disk.CoordinatorToken = ""
 			data, _ := json.MarshalIndent(disk, "", "  ")
 			b.mu.Lock()
 			e = writeHubFile(filepath.Join(a.s.root, "hub.json"), data)

@@ -89,6 +89,7 @@ func TestHubConfigRejectsPublicPlaintextAndBroadOverlayRoutes(t *testing.T) {
 		if validateHubConfig(config) == nil {
 			t.Fatalf("unsafe address accepted: %s", address)
 		}
+
 	}
 	for _, cidr := range []string{"0.0.0.0/0", "100.0.0.0/8", "192.168.0.0/16", "::/0", "fd00::/8", "invalid"} {
 		config := good
@@ -96,6 +97,7 @@ func TestHubConfigRejectsPublicPlaintextAndBroadOverlayRoutes(t *testing.T) {
 		if validateHubConfig(config) == nil {
 			t.Fatalf("broad/non-overlay route accepted: %s", cidr)
 		}
+
 	}
 	for _, cidr := range []string{"100.64.0.0/10", "100.100.100.100/32", "fd7a:115c:a1e0::/48", "fd7a:115c:a1e0::1/128"} {
 		config := good
@@ -103,6 +105,24 @@ func TestHubConfigRejectsPublicPlaintextAndBroadOverlayRoutes(t *testing.T) {
 		if err := validateHubConfig(config); err != nil {
 			t.Fatalf("valid private-overlay route rejected: %s: %v", cidr, err)
 		}
+
+	}
+}
+
+func TestHubConfigAcceptsSeparateCoordinatorIdentity(t *testing.T) {
+	c := HubConfig{
+		Address: "https://100.64.0.2:47603", Fingerprint: strings.Repeat("a", 64),
+		Token: strings.Repeat("b", 64), Enabled: true, ClipboardMode: "lan",
+		CoordinatorAddress:     "https://coord.example:47604",
+		CoordinatorFingerprint: strings.Repeat("c", 64),
+		CoordinatorToken:       strings.Repeat("d", 64), CoordinatorDevice: "windows", CoordinatorTarget: "pi",
+	}
+	if err := validateHubConfig(c); err != nil {
+		t.Fatal(err)
+	}
+	c.CoordinatorToken = ""
+	if err := validateHubConfig(c); err == nil {
+		t.Fatal("accepted missing separate coordinator token")
 	}
 }
 

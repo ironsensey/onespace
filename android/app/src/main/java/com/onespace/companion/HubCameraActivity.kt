@@ -15,6 +15,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,6 +39,8 @@ class HubCameraActivity : Activity() {
     @Volatile private var api: HubApi? = null
     @Volatile private var session: String? = null
     @Volatile private var sessionOwner: HubApi? = null
+    @Volatile private var coordinatorSession: String? = null
+    @Volatile private var coordinatorOwner: CoordinatorApi? = null
     private var viewerRevision = 0L
     @Volatile private var authorized = false
     private var web: WebView? = null
@@ -76,7 +79,7 @@ class HubCameraActivity : Activity() {
     }
     @android.annotation.SuppressLint("SetJavaScriptEnabled") // Only the bundled, non-navigable viewer is loaded.
     private fun showViewer() {
-        if (web != null || !HubProfile(this).configured()) return
+        if (web != null || (!HubProfile(this).configured() && !CoordinatorProfile(this).configured())) return
         while (root.childCount > 1) root.removeViewAt(1)
         viewerRevision = HubProfile(this).revision()
         val view = WebView(this)
@@ -101,17 +104,22 @@ class HubCameraActivity : Activity() {
         status.text = "Live view · establishing authenticated WebRTC"
         worker.execute {
             try {
-                val client = HubProfile(this@HubCameraActivity).client(viewerRevision)
-                val response = client.raw("/hub/v1/camera/status")
-                val iceServers = JSONObject(response.body).optJSONArray("iceServers") ?: org.json.JSONArray()
+                val hub = HubProfile(this@HubCameraActivity)
+                val coordinator = CoordinatorProfile(this@HubCameraActivity)
+                val iceServers = if (hub.configured()) {
+                    val response = hub.client(viewerRevision).raw("/hub/v1/camera/status")
+                    JSONObject(response.body).optJSONArray("iceServers") ?: org.json.JSONArray()
+                } else coordinator.iceServers()
                 runOnUiThread {
                     if (authorized && web === view && HubProfile(this@HubCameraActivity).revision() == viewerRevision) {
-                        view.evaluateJavascript("setIceServers(${iceServers})", null)
+                        view.evaluateJavascript("setIcePolicy('${CoordinatorProfile(this@HubCameraActivity).icePolicy()}');setIceServers(${iceServers})", null)
                     }
                 }
             } catch (_: Exception) {
                 runOnUiThread {
-                    if (authorized && web === view) status.text = "Live view unavailable: camera network configuration could not be loaded"
+                    if (authorized && web === view && CoordinatorProfile(this@HubCameraActivity).configured()) {
+                        view.evaluateJavascript("setIcePolicy('${CoordinatorProfile(this@HubCameraActivity).icePolicy()}');setIceServers(${CoordinatorProfile(this@HubCameraActivity).iceServers()})", null)
+                    } else if (authorized && web === view) status.text = "Live view unavailable: camera network configuration could not be loaded"
                 }
             }
         }
@@ -125,24 +133,64 @@ class HubCameraActivity : Activity() {
                 try {
                     val old = session
                     val oldOwner = sessionOwner
+                    val oldCoordinator = coordinatorSession
+                    val oldCoordinatorOwner = coordinatorOwner
                     session = null; sessionOwner = null
+                    coordinatorSession = null; coordinatorOwner = null
                     if (old != null) try { oldOwner?.freshForCleanup()?.raw(old, "DELETE") } catch (_: Exception) {}
+                    if (oldCoordinator != null && oldCoordinatorOwner != null) try { oldCoordinatorOwner.close(oldCoordinator, CoordinatorProfile(this@HubCameraActivity).device()) } catch (_: Exception) {}
                     if (generation.get() != attempt || !authorized) return@execute
-                    val client = HubProfile(this@HubCameraActivity).client(viewerRevision)
-                    api = client
-                    val answer = client.raw("/hub/v1/camera/whep", "POST", sdp, "application/sdp")
-                    val location = answer.location ?: throw java.io.IOException("Camera session missing")
-                    val path = HubPolicy.sessionPath(client.baseUrl, location)
-                    if (generation.get() != attempt || !authorized) {
-                        try { client.freshForCleanup().raw(path, "DELETE") } catch (_: Exception) {}
-                        return@execute
+                    var delivered = false
+                    if (HubProfile(this@HubCameraActivity).configured()) {
+                        try {
+                            val client = HubProfile(this@HubCameraActivity).client(viewerRevision)
+                            api = client
+                            val answer = client.raw("/hub/v1/camera/whep", "POST", sdp, "application/sdp")
+                            val location = answer.location ?: throw java.io.IOException("Camera session missing")
+                            val path = HubPolicy.sessionPath(client.baseUrl, location)
+                            if (generation.get() != attempt || !authorized) {
+                                try { client.freshForCleanup().raw(path, "DELETE") } catch (_: Exception) {}
+                                return@execute
+                            }
+                            session = path; sessionOwner = client; delivered = true
+                            runOnUiThread {
+                                if (generation.get() == attempt && authorized) {
+                                    web?.evaluateJavascript("acceptAnswer(${JSONObject.quote(answer.body)},$clientAttempt)", null)
+                                    status.text = "Live view · LAN/direct hub signaling"
+                                }
+                            }
+                        } catch (_: Exception) { }
                     }
-                    session = path
-                    sessionOwner = client
-                    runOnUiThread {
-                        if (generation.get() == attempt && authorized) {
-                            web?.evaluateJavascript("acceptAnswer(${JSONObject.quote(answer.body)},$clientAttempt)", null)
-                            status.text = "Live view · video connection negotiating"
+                    if (!delivered && CoordinatorProfile(this@HubCameraActivity).configured()) {
+                        val profile = CoordinatorProfile(this@HubCameraActivity)
+                        val coordinator = profile.client(profile.revision())
+                        val created = coordinator.create(profile.device(), profile.target())
+                        if (created.status !in 200..299) throw java.io.IOException("Coordinator denied camera session")
+                        val sessionId = JSONObject(created.body).getString("session")
+                        try {
+                            val sent = coordinator.send(sessionId, profile.device(), "offer", sdp)
+                            if (sent.status !in 200..299) throw java.io.IOException("Coordinator rejected offer")
+                            val messages = coordinator.poll(sessionId, profile.device())
+                            if (messages.status !in 200..299) throw java.io.IOException("Remote camera answer unavailable")
+                            val list = JSONArray(messages.body)
+                            var answer: String? = null
+                            for (i in 0 until list.length()) {
+                                val message = list.getJSONObject(i)
+                                if (message.optString("type") == "answer") { answer = message.optString("body"); break }
+                            }
+                            val answerSdp = answer
+                            if (answerSdp.isNullOrBlank()) throw java.io.IOException("Remote camera answer missing")
+                            runOnUiThread {
+                                if (generation.get() == attempt && authorized) {
+                                    web?.evaluateJavascript("acceptAnswer(${JSONObject.quote(answerSdp)},$clientAttempt)", null)
+                                    status.text = "Live view · coordinator/direct or TURN negotiating"
+                                }
+                            }
+                            coordinatorSession = sessionId
+                            coordinatorOwner = coordinator
+                        } catch (error: Exception) {
+                            try { coordinator.close(sessionId, profile.device()) } catch (_: Exception) {}
+                            throw error
                         }
                     }
                 } catch (_: Exception) {
@@ -164,8 +212,14 @@ class HubCameraActivity : Activity() {
         web = null
         val close = session
         val closeOwner = sessionOwner
+        val remoteClose = coordinatorSession
+        val remoteOwner = coordinatorOwner
         session = null; sessionOwner = null
-        if (close != null) try { worker.execute { try { closeOwner?.freshForCleanup()?.raw(close, "DELETE") } catch (_: Exception) {} } } catch (_: java.util.concurrent.RejectedExecutionException) {}
+        coordinatorSession = null; coordinatorOwner = null
+        if (close != null || remoteClose != null) try { worker.execute {
+            try { if (close != null) closeOwner?.freshForCleanup()?.raw(close, "DELETE") } catch (_: Exception) {}
+            try { if (remoteClose != null && remoteOwner != null) remoteOwner.close(remoteClose, CoordinatorProfile(this@HubCameraActivity).device()) } catch (_: Exception) {}
+        } } catch (_: java.util.concurrent.RejectedExecutionException) {}
         super.onPause()
     }
     override fun onDestroy() { worker.shutdown(); super.onDestroy() }

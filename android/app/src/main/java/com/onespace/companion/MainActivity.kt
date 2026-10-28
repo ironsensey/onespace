@@ -384,6 +384,22 @@ class MainActivity : Activity() {
     private fun hubPage() {
         val hub = HubProfile(this)
         section("Raspberry Pi hub")
+        note("Optional remote camera coordination is a separate identity and does not replace Pi pairing. Use a temporary coordinator test credential here until a public endpoint is approved.")
+        val coordinator = CoordinatorProfile(this)
+        val coordinatorEndpoint = field("Coordinator HTTPS endpoint").apply { if (coordinator.configured()) setText(coordinator.endpoint()) }
+        val coordinatorPin = field("Coordinator certificate SHA-256 fingerprint").apply { if (coordinator.configured()) setText(coordinator.fingerprint()) }
+        val coordinatorToken = field("Separate coordinator device credential", true)
+        val coordinatorDevice = field("Coordinator device ID").apply { if (coordinator.configured()) setText(coordinator.device()) }
+        val coordinatorTarget = field("Pi camera target ID").apply { if (coordinator.configured()) setText(coordinator.target()) }
+        val coordinatorIce = field("ICE servers JSON (short-lived TURN credentials)").apply { if (coordinator.configured()) setText(coordinator.iceServers().toString()) else setText("[]") }
+        val coordinatorPolicy = field("Camera ICE policy: all or relay").apply { if (coordinator.configured()) setText(coordinator.icePolicy()) else setText("all") }
+        listOf(coordinatorEndpoint, coordinatorPin, coordinatorToken, coordinatorDevice, coordinatorTarget, coordinatorIce, coordinatorPolicy).forEach { root.addView(it) }
+        root.addView(button("Save coordinator camera settings") {
+            try {
+                coordinator.save(coordinatorEndpoint.text.toString().trim(), coordinatorPin.text.toString().trim(), coordinatorToken.text.toString(), coordinatorDevice.text.toString().trim(), coordinatorTarget.text.toString().trim(), coordinatorIce.text.toString().trim(), coordinatorPolicy.text.toString().trim())
+                coordinatorToken.text.clear(); info("Coordinator camera settings saved separately from Pi credentials")
+            } catch (e: Exception) { info(e.message ?: "Invalid coordinator settings") }
+        })
         note("OneSpace Connect includes encrypted PC access through your Pi, Google Drive storage and camera recording. Use a reachable Pi address; Tailscale is optional. Existing PC identity and permissions remain required.")
         val host = field("Pi host or overlay DNS name:47603").apply { setText(hub.host()) }
         val localHost = field("Optional Pi LAN address:47603").apply { setText(hub.localHost()) }

@@ -14,6 +14,13 @@ object HubPolicy {
         require(host.matches(Regex("[A-Za-z0-9.:-]+"))) { "Invalid host" }
         return "https://${if (host.contains(':')) "[$host]" else host}:${if (uri.port == -1) 47603 else uri.port}"
     }
+    fun coordinatorUrl(address: String): String {
+        val uri = URI(address.trim())
+        require(uri.scheme == "https" && uri.host != null && uri.userInfo == null &&
+            (uri.rawPath.isNullOrEmpty() || uri.rawPath == "/") && uri.rawQuery == null && uri.rawFragment == null)
+        require(uri.port == -1 || uri.port in 1..65535)
+        return "https://${if (uri.host.contains(':')) "[${uri.host}]" else uri.host}:${if (uri.port == -1) 443 else uri.port}"
+    }
     fun normalizedPin(value: String): String {
         val pin = value.trim().lowercase().replace(":", "").replace(" ", "")
         require(pin.matches(Regex("[a-f0-9]{64}"))) { "Expected a SHA-256 fingerprint" }

@@ -34,7 +34,7 @@ func openNativeCamera(a *App) error {
 	ole.NewProc("CoInitializeEx").Call(0, 2)
 	defer ole.NewProc("CoUninitialize").Call()
 	c := a.hub.snapshot()
-	if !c.Enabled {
+	if !c.Enabled && c.CoordinatorAddress == "" {
 		return errors.New("configure and enable the Pi connection first")
 	}
 	cli, err := newPinnedHubClient(c)
@@ -42,10 +42,6 @@ func openNativeCamera(a *App) error {
 		return err
 	}
 	defer cli.CloseIdleConnections()
-	statusResponse, err := hubRequest(context.Background(), cli, c, "GET", "/hub/v1/camera/status", "", nil)
-	if err != nil {
-		return errors.New("camera status unavailable")
-	}
 	var status struct {
 		ICEServers []struct {
 			URLs       []string `json:"urls"`
@@ -53,11 +49,26 @@ func openNativeCamera(a *App) error {
 			Credential string   `json:"credential,omitempty"`
 		} `json:"iceServers"`
 	}
-	if err := json.NewDecoder(statusResponse.Body).Decode(&status); err != nil {
-		statusResponse.Body.Close()
-		return errors.New("invalid camera status")
+	if c.Enabled {
+		statusResponse, statusErr := hubRequest(context.Background(), cli, c, "GET", "/hub/v1/camera/status", "", nil)
+		if statusErr != nil {
+			if c.CoordinatorAddress == "" {
+				return errors.New("camera status unavailable")
+			}
+		} else if decodeErr := json.NewDecoder(statusResponse.Body).Decode(&status); decodeErr != nil {
+			statusResponse.Body.Close()
+			return errors.New("invalid camera status")
+		} else {
+			statusResponse.Body.Close()
+		}
 	}
-	statusResponse.Body.Close()
+	for _, server := range c.CoordinatorICEServers {
+		status.ICEServers = append(status.ICEServers, struct {
+			URLs       []string `json:"urls"`
+			Username   string   `json:"username,omitempty"`
+			Credential string   `json:"credential,omitempty"`
+		}{URLs: server.URLs, Username: server.Username, Credential: server.Credential})
+	}
 	iceServers, err := json.Marshal(status.ICEServers)
 	if err != nil {
 		return errors.New("cannot prepare camera network configuration")
@@ -80,6 +91,8 @@ func openNativeCamera(a *App) error {
 	nonce := randomHex(32)
 	var mu sync.Mutex
 	session := ""
+	coordSession := ""
+	coord, _ := newCoordinatorCamera(c)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	cleanup := func() {
@@ -92,6 +105,12 @@ func openNativeCamera(a *App) error {
 			defer stop()
 			if res, e := hubRequest(cleanupCtx, cli, c, "DELETE", path, "", nil); e == nil {
 				res.Body.Close()
+			}
+			if coordSession != "" && coord != nil {
+				cleanupCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+				_ = coord.close(cleanupCtx, coordSession)
+				stop()
+				coordSession = ""
 			}
 		}
 	}
@@ -116,23 +135,51 @@ func openNativeCamera(a *App) error {
 		requestCtx, stop := context.WithTimeout(ctx, 12*time.Second)
 		defer stop()
 		response, err := hubRequest(requestCtx, cli, c, "POST", "/hub/v1/camera/whep", "application/sdp", strings.NewReader(sdp))
-		if err != nil {
+		if err == nil {
+			defer response.Body.Close()
+			path := response.Header.Get("Location")
+			if !strings.HasPrefix(path, "/hub/v1/camera/session/") || strings.ContainsAny(path, "?#\\\r\n") || strings.Contains(path, "..") {
+				return "", errors.New("invalid camera session")
+			}
+			mu.Lock()
+			session = path
+			mu.Unlock()
+			body, readErr := io.ReadAll(io.LimitReader(response.Body, 256<<10+1))
+			if readErr != nil || len(body) > 256<<10 {
+				cleanup()
+				return "", errors.New("invalid camera answer")
+			}
+			return string(body), nil
+		}
+		if coord == nil {
 			return "", errors.New("camera permission or connection failed")
 		}
-		defer response.Body.Close()
-		path := response.Header.Get("Location")
-		if !strings.HasPrefix(path, "/hub/v1/camera/session/") || strings.ContainsAny(path, "?#\\\r\n") || strings.Contains(path, "..") {
-			return "", errors.New("invalid camera session")
+		remote, createErr := coord.create(requestCtx)
+		if createErr != nil {
+			return "", errors.New("camera permission or coordinator unavailable")
 		}
-		mu.Lock()
-		session = path
-		mu.Unlock()
-		body, err := io.ReadAll(io.LimitReader(response.Body, 256<<10+1))
-		if err != nil || len(body) > 256<<10 {
-			cleanup()
-			return "", errors.New("invalid camera answer")
+		coordSession = remote.Session
+		if sendErr := coord.send(requestCtx, coordSession, "offer", sdp); sendErr != nil {
+			_ = coord.close(context.Background(), coordSession)
+			coordSession = ""
+			return "", sendErr
 		}
-		return string(body), nil
+		pollCtx, cancelPoll := context.WithTimeout(ctx, 20*time.Second)
+		defer cancelPoll()
+		messages, pollErr := coord.poll(pollCtx, coordSession)
+		if pollErr != nil {
+			_ = coord.close(context.Background(), coordSession)
+			coordSession = ""
+			return "", errors.New("remote camera answer unavailable")
+		}
+		for _, message := range messages {
+			if message.Type == "answer" && len(message.Body) > 0 {
+				return message.Body, nil
+			}
+		}
+		_ = coord.close(context.Background(), coordSession)
+		coordSession = ""
+		return "", errors.New("remote camera answer missing")
 	}); err != nil {
 		return err
 	}
@@ -140,15 +187,20 @@ func openNativeCamera(a *App) error {
 	// The content contains no user-provided HTML or navigation links.
 	html := strings.ReplaceAll(nativeCameraHTML, "__VIEWER_NONCE__", nonce)
 	html = strings.ReplaceAll(html, "__ICE_SERVERS__", iceJSON)
+	policy := c.CameraICEPolicy
+	if policy == "" {
+		policy = "all"
+	}
+	html = strings.ReplaceAll(html, "__ICE_POLICY__", policy)
 	w.SetHtml(html)
 	w.Run()
 	return nil
 }
 
 const nativeCameraHTML = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; media-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'"><style>body{background:#101820;color:#eee;font:16px system-ui;margin:16px}video{width:100%;height:75vh;background:#000}button{padding:10px;margin:8px}</style></head><body><video id="v" autoplay playsinline controls></video><p id="s">Ready. Recording is controlled separately.</p><button id="start">Connect</button><button id="stop">Disconnect</button><script>
-const credential='__VIEWER_NONCE__';const iceServers=__ICE_SERVERS__;let peer=null,generation=0;const state=document.getElementById('s');
+const credential='__VIEWER_NONCE__';const iceServers=__ICE_SERVERS__;const iceTransportPolicy='__ICE_POLICY__';let peer=null,generation=0;const state=document.getElementById('s');
 async function stop(){generation++;if(peer){peer.close();peer=null}document.getElementById('v').srcObject=null;await closeCamera(credential);state.textContent='Disconnected'}
 document.getElementById('stop').onclick=()=>stop().catch(()=>{});
-document.getElementById('start').onclick=async()=>{await stop();const stamp=generation;try{const p=new RTCPeerConnection({iceServers:iceServers,bundlePolicy:'max-bundle'});peer=p;p.addTransceiver('video',{direction:'recvonly'});p.ontrack=e=>{if(stamp===generation)document.getElementById('v').srcObject=e.streams[0]||new MediaStream([e.track])};p.onconnectionstatechange=()=>{if(stamp===generation)state.textContent='Video connection: '+p.connectionState};await p.setLocalDescription(await p.createOffer());await new Promise((resolve,reject)=>{if(p.iceGatheringState==='complete')return resolve();const timer=setTimeout(()=>reject(Error('Network negotiation timed out')),6000);p.onicegatheringstatechange=()=>{if(p.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});if(stamp!==generation)return;const answer=await openCamera(credential,p.localDescription.sdp);if(stamp!==generation){await closeCamera(credential);return}await p.setRemoteDescription({type:'answer',sdp:answer})}catch(e){await stop();state.textContent=e.message}};
+document.getElementById('start').onclick=async()=>{await stop();const stamp=generation;try{const p=new RTCPeerConnection({iceServers:iceServers,iceTransportPolicy:iceTransportPolicy,bundlePolicy:'max-bundle'});peer=p;p.addTransceiver('video',{direction:'recvonly'});p.ontrack=e=>{if(stamp===generation)document.getElementById('v').srcObject=e.streams[0]||new MediaStream([e.track])};p.onconnectionstatechange=()=>{if(stamp===generation)state.textContent='Video connection: '+p.connectionState};await p.setLocalDescription(await p.createOffer());await new Promise((resolve,reject)=>{if(p.iceGatheringState==='complete')return resolve();const timer=setTimeout(()=>reject(Error('Network negotiation timed out')),6000);p.onicegatheringstatechange=()=>{if(p.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});if(stamp!==generation)return;const answer=await openCamera(credential,p.localDescription.sdp);if(stamp!==generation){await closeCamera(credential);return}await p.setRemoteDescription({type:'answer',sdp:answer})}catch(e){await stop();state.textContent=e.message}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop().catch(()=>{})});window.addEventListener('pagehide',()=>{if(peer)peer.close();closeCamera(credential).catch(()=>{})});
 </script></body></html>`

@@ -33,7 +33,22 @@ video relay. The prepared target architecture is:
    relay/direct state.
 
 The repository now contains the bounded protocol implementation and Pi bridge,
-but no public coordinator or TURN service is deployed.
+plus separate Windows and Android coordinator profiles. No public coordinator
+or TURN service is deployed.
+
+Windows stores coordinator endpoint, certificate fingerprint, device token,
+device ID, Pi target ID, ICE server JSON and `all`/`relay` policy separately
+from the existing pinned Pi hub profile. Android stores the same coordinator
+identity in a separate Android Keystore-backed profile. Existing clipboard,
+file, workspace, Drive, pairing and update credentials are not reused as
+coordinator credentials.
+
+Both viewers try the authenticated pinned Pi WHEP path first. If it is
+unavailable, they create a coordinator session and exchange the complete SDP
+offer/answer through the Pi bridge. Stopping, backgrounding, replacing a
+viewer, authorization failure or reconnect closes the corresponding hub or
+coordinator session. `relay` is intended only for controlled coturn tests;
+normal `all` mode allows direct ICE before TURN.
 
 ### Signaling contract
 

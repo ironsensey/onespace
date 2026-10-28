@@ -127,6 +127,13 @@ are accepted only when they resolve to the configured loopback WHEP resource;
 the bridge deletes that resource if answer delivery, acknowledgement, expiry
 or authorization fails.
 
+Windows and Android keep coordinator endpoint, certificate pin, separate
+device credential, Pi target ID, bounded ICE-server configuration and direct
+or forced-relay policy separate from the existing Pi profile. ICE credentials
+must be short-lived coturn REST credentials; the coturn static secret never
+goes to a client. `all` is the normal policy and `relay` is reserved for
+controlled TURN tests.
+
 Event request:
 
 ```json
