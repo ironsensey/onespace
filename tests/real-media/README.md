@@ -25,15 +25,16 @@ frames. A successful SDP answer without a decoded frame is a failure.
 
 The default fixture verifies coordinator-to-bridge MediaMTX media flow and
 records the selected candidate pair. It does not prove Internet reachability.
-The TURN profile requires a separately supplied coturn test endpoint:
+The Compose TURN profile starts temporary coturn with test-only credentials:
 
 ```sh
-TURN_URL=turn:turn.example:3478?transport=udp \
-TURN_USERNAME=short-lived-user \
-TURN_CREDENTIAL=short-lived-credential \
-docker compose --profile turn run --rm receiver
+docker compose --profile turn up -d
+TURN_URL=turn:coturn:3478?transport=udp \
+TURN_USERNAME=testuser \
+TURN_CREDENTIAL=testpassword \
+FORCE_RELAY=1 docker compose --profile turn run --rm receiver
 ```
 
-The TURN profile must be run twice by the CI job: UDP and TCP/TLS fallback.
-Credentials are injected at runtime and are never committed. The receiver
-must assert `candidateType=relay` in forced-relay mode.
+These credentials are disposable fixture credentials, not a production
+credential scheme. Production clients must use short-lived coturn REST
+credentials. The receiver asserts `candidateType=relay` in forced-relay mode.

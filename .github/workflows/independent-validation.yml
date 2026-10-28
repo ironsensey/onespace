@@ -7,6 +7,28 @@ on:
 permissions:
   contents: read
 jobs:
+  linux-camera:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: hub/go.mod
+      - run: go test -race -p 1 ./...
+        working-directory: hub
+      - name: Run direct real-media decoded-frame test
+        run: sh tests/real-media/run.sh
+      - name: Run forced TURN decoded-frame test
+        working-directory: tests/real-media
+        run: |
+          docker compose --profile turn up -d mediamtx publisher coordinator bridge coturn
+          trap 'docker compose --profile turn down -v' EXIT
+          TURN_URL=turn:coturn:3478?transport=udp \
+          TURN_USERNAME=testuser \
+          TURN_CREDENTIAL=testpassword \
+          FORCE_RELAY=1 docker compose --profile turn run --rm receiver
   windows:
     runs-on: windows-latest
     timeout-minutes: 20

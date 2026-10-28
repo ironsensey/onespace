@@ -56,3 +56,19 @@ services:
       TURN_USERNAME: ${TURN_USERNAME:-}
       TURN_CREDENTIAL: ${TURN_CREDENTIAL:-}
       FORCE_RELAY: ${FORCE_RELAY:-0}
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    profiles: ["turn"]
+    command:
+      - -n
+      - --log-file=stdout
+      - --lt-cred-mech
+      - --user=testuser:testpassword
+      - --realm=onespace.test
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"

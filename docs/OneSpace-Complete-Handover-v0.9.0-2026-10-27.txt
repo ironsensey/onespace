@@ -26,8 +26,11 @@ Validation update (28 October 2026):
 - Android debug and unsigned release builds, debug unit tests and debug lint
   passed. The debug APK has one v2 signer; the release output is intentionally
   unsigned and is not installable until signed with the original key.
-- The reproducible real-media fixture is present at `tests/real-media`, but was
-  not run because this Windows host has no Docker/Linux runner.
+- The reproducible real-media fixture is present at `tests/real-media`.
+  Linux CI is configured to run `go test -race -p 1 ./...` in `hub`, then
+  `tests/real-media/run.sh`, followed by the disposable coturn profile with
+  `FORCE_RELAY=1`. The fixture remains unrun locally because this Windows host
+  has no Docker/Linux runner.
 - Hub full-suite execution remains blocked by pre-existing Windows filesystem
   permission and publication-directory failures; coordination/camera packages
   and hub vet remain passing.
