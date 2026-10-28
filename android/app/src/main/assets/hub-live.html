@@ -1,10 +1,12 @@
 <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; media-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'"><style>html,body{margin:0;background:#0a1020;color:#bcd7e7;font:16px system-ui;height:100%}video{width:100%;height:85%;object-fit:contain}p{padding:12px}button{background:#073d51;color:#aef4ff;border:1px solid #19bddd;border-radius:12px;padding:12px}</style></head><body><video id="video" autoplay playsinline muted></video><p>Live Pi camera. No video is recorded by OneSpace.<br><button onclick="reconnect()">Reconnect</button></p><script>
-'use strict';let peer;let stopped=false;let sequence=0;
+'use strict';let peer;let stopped=false;let sequence=0;let iceServers=[];let configured=false;
+function setIceServers(value){iceServers=Array.isArray(value)?value:[];configured=true;startVideo();}
 async function startVideo(){
+ if(!configured)return;
  const attempt=++sequence;
  try{
   if(!window.RTCPeerConnection)throw Error('WebRTC unavailable');
-  const current=new RTCPeerConnection({iceServers:[],bundlePolicy:'max-bundle'});
+  const current=new RTCPeerConnection({iceServers:iceServers,bundlePolicy:'max-bundle'});
   peer=current;
   current.addTransceiver('video',{direction:'recvonly'});
   current.ontrack=event=>{if(attempt===sequence&&!stopped)document.getElementById('video').srcObject=event.streams[0]||new MediaStream([event.track]);};
@@ -18,5 +20,5 @@ async function startVideo(){
 function reconnect(){stopVideo();stopped=false;startVideo();}
 async function acceptAnswer(sdp,attempt){const current=peer;if(attempt===sequence&&!stopped&&current)try{await current.setRemoteDescription({type:'answer',sdp});}catch(error){HubNative.state('failed');}}
 function stopVideo(){stopped=true;sequence++;if(peer){peer.close();peer=null;}document.getElementById('video').srcObject=null;}
-window.addEventListener('pagehide',stopVideo);startVideo();
+window.addEventListener('pagehide',stopVideo);
 </script></body></html>

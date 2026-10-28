@@ -1,0 +1,19 @@
+# OneSpace coturn configuration.
+# Copy to /etc/turnserver.conf after installing coturn and replace the realm.
+# Keep the OneSpace hub as the only public HTTPS signaling endpoint.
+listening-port=3478
+tls-listening-port=5349
+listening-ip=::
+relay-ip=::
+min-port=49152
+max-port=49252
+fingerprint
+lt-cred-mech
+realm=onespace.example
+server-name=onespace.example
+no-cli
+no-loopback-peers
+no-multicast-peers
+stale-nonce=600
+log-file=stdout
+simple-log

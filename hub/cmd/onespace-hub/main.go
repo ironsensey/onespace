@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -131,11 +132,16 @@ func run(args []string) error {
 			return err
 		}
 		h.SetRecordingStatus(storage.RecordingEnabled)
-		gateway, err := camera.Register(h.Mux(), camera.Config{Upstream: *upstream, Recording: storage.RecordingEnabled}, func(r *http.Request) (string, bool) {
+		iceServers, err := cameraICEServers(os.Getenv("ONESPACE_CAMERA_ICE_SERVERS"))
+		if err != nil {
+			return err
+		}
+		gateway, err := camera.Register(h.Mux(), camera.Config{Upstream: *upstream, Recording: storage.RecordingEnabled, ICEServers: iceServers}, func(r *http.Request) (string, bool) {
 			if r.RemoteAddr == "" {
 				d, ok := h.CheckPermission(r, "camera")
 				return d.ID, ok
 			}
+
 			d, ok := h.Authorize(r, "camera")
 			return d.ID, ok
 		})
@@ -171,6 +177,59 @@ func run(args []string) error {
 	default:
 		return errors.New("unknown command")
 	}
+}
+
+func cameraICEServers(raw string) ([]camera.ICEServer, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+	var servers []camera.ICEServer
+	if err := json.Unmarshal([]byte(raw), &servers); err != nil {
+		return nil, fmt.Errorf("ONESPACE_CAMERA_ICE_SERVERS must be valid JSON: %w", err)
+	}
+	if len(servers) > 8 {
+		return nil, errors.New("ONESPACE_CAMERA_ICE_SERVERS supports at most 8 servers")
+	}
+	for i, server := range servers {
+		if len(server.URLs) == 0 || len(server.URLs) > 8 {
+			return nil, fmt.Errorf("camera ICE server %d must contain 1 to 8 URLs", i)
+		}
+		for _, rawURL := range server.URLs {
+			parsed, err := url.Parse(rawURL)
+			if err != nil || (parsed.Scheme != "stun" && parsed.Scheme != "turn" && parsed.Scheme != "turns") || parsed.Fragment != "" {
+				return nil, fmt.Errorf("camera ICE server %d contains an invalid URL", i)
+			}
+			authority, rawQuery := parsed.Host, parsed.RawQuery
+			if authority == "" && parsed.Opaque != "" {
+				opaque := parsed.Opaque
+				if index := strings.IndexByte(opaque, '?'); index >= 0 {
+					rawQuery = opaque[index+1:]
+					opaque = opaque[:index]
+				}
+				authority = opaque
+			}
+			if authority == "" {
+				return nil, fmt.Errorf("camera ICE server %d contains an invalid URL", i)
+			}
+			host, err := url.Parse("//" + authority)
+			if err != nil || host.Host == "" || host.User != nil {
+				return nil, fmt.Errorf("camera ICE server %d contains an invalid URL", i)
+			}
+			if rawQuery != "" {
+				if parsed.Scheme == "stun" {
+					return nil, fmt.Errorf("camera ICE server %d contains an invalid URL", i)
+				}
+				query, err := url.ParseQuery(rawQuery)
+				if err != nil || len(query) != 1 || len(query["transport"]) != 1 || (query.Get("transport") != "udp" && query.Get("transport") != "tcp") {
+					return nil, fmt.Errorf("camera ICE server %d contains an invalid TURN transport", i)
+				}
+			}
+		}
+		if (server.Username == "") != (server.Credential == "") {
+			return nil, fmt.Errorf("camera ICE server %d must provide both username and credential", i)
+		}
+	}
+	return servers, nil
 }
 
 // Reject disallowed network peers before paying for a TLS handshake. Never use

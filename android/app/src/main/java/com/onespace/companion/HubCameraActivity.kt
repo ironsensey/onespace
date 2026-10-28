@@ -99,6 +99,22 @@ class HubCameraActivity : Activity() {
         val html = assets.open("hub-live.html").bufferedReader().use { it.readText() }
         view.loadDataWithBaseURL("https://onespace.invalid/live/", html, "text/html", "UTF-8", null)
         status.text = "Live view · establishing authenticated WebRTC"
+        worker.execute {
+            try {
+                val client = HubProfile(this@HubCameraActivity).client(viewerRevision)
+                val response = client.raw("/hub/v1/camera/status")
+                val iceServers = JSONObject(response.body).optJSONArray("iceServers") ?: org.json.JSONArray()
+                runOnUiThread {
+                    if (authorized && web === view && HubProfile(this@HubCameraActivity).revision() == viewerRevision) {
+                        view.evaluateJavascript("setIceServers(${iceServers})", null)
+                    }
+                }
+            } catch (_: Exception) {
+                runOnUiThread {
+                    if (authorized && web === view) status.text = "Live view unavailable: camera network configuration could not be loaded"
+                }
+            }
+        }
     }
     inner class Bridge {
         @JavascriptInterface fun offer(sdp: String, clientAttempt: Int) {

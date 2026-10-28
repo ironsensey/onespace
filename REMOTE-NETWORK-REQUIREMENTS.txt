@@ -1,0 +1,63 @@
+OneSpace remote camera network requirements
+==========================================
+
+Remote camera viewing has two separate paths:
+
+1. HTTPS signaling and authentication to the Pi hub (TCP 47603).
+2. WebRTC media between the viewer and MediaMTX, using direct ICE candidates
+   when possible and TURN when direct candidates cannot connect.
+
+The Pi must have a reachable public IPv6 address, or a public IPv4 address with
+router port forwarding. A DNS name is optional but recommended for changing
+addresses. Carrier-grade NAT without reachable IPv6 or another reachable TURN
+endpoint cannot be solved by OneSpace alone.
+
+Pi firewall/router forwarding
+-----------------------------
+
+Forward only these ports to the Pi:
+
+  TCP 47603             OneSpace HTTPS signaling and PC relay
+  UDP/TCP 3478          coturn TURN allocations
+  UDP 49152-49252       coturn relay media range
+
+Do not forward these camera/service ports:
+
+  TCP 8554              MediaMTX RTSP
+  TCP 8889              MediaMTX WHEP/signaling
+  TCP 9997              MediaMTX management API
+  TCP 47601             Windows PC TLS service
+
+Keep RTSP, WHEP and the MediaMTX management API bound to loopback. The hub
+proxies authenticated WHEP signaling; clients do not receive direct access to
+the MediaMTX HTTP or management interfaces.
+
+TURN setup
+----------
+
+Run hub/deploy/install-turn.sh as root on the Pi with its public IPv6 address
+or DNS name. The script installs coturn, creates a temporary long-term
+credential, writes the hub ICE configuration, and enables the service. Review
+the generated firewall rules and keep the credential files readable only by
+root and the onespace-hub service account.
+
+The hub returns ICE server details only after the caller passes hub TLS pinning,
+authentication, and the camera permission check. TURN credentials are not a
+replacement for hub authorization.
+
+Validation
+----------
+
+Test from a device on a different network. First verify TCP 47603, then open
+Live Camera and wait for the viewer to report a connected state and display
+frames. A successful HTTPS status response or SDP answer proves signaling only;
+it does not prove that WebRTC media arrived.
+
+If signaling succeeds but frames do not arrive, check:
+
+  systemctl status onespace-hub coturn
+  journalctl -u onespace-hub -u coturn -n 100 --no-pager
+
+Confirm that the configured public address is reachable, the TURN relay range
+is forwarded, and the Pi is not reporting undervoltage or sustained overload.
+No universal CGNAT traversal or hosted relay is included.

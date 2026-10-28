@@ -169,3 +169,23 @@ func TestGatewayStatusDoesNotPretendToMeasureFrames(t *testing.T) {
 		t.Fatalf("misleading camera status %s", w.Body.String())
 	}
 }
+
+func TestGatewayStatusReturnsConfiguredICEServers(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	mux := http.NewServeMux()
+	gateway, err := Register(mux, Config{
+		Upstream:   server.URL + "/camera/whep",
+		ICEServers: []ICEServer{{URLs: []string{"turn:[2001:db8::1]:3478?transport=udp"}, Username: "onespace", Credential: "secret"}},
+	}, func(r *http.Request) (string, bool) { return "device", true })
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gateway.Close()
+	w := request(mux, "GET", prefix+"status", "first", nil)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"iceServers"`) || !strings.Contains(w.Body.String(), "2001:db8") {
+		t.Fatalf("ICE server configuration missing: %s", w.Body.String())
+	}
+}

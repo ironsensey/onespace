@@ -22,14 +22,18 @@ func openNativeDashboard(a *App) error {
 	user := syscall.NewLazyDLL("user32.dll")
 	kernel := syscall.NewLazyDLL("kernel32.dll")
 	ole := syscall.NewLazyDLL("ole32.dll")
+	dwm := syscall.NewLazyDLL("dwmapi.dll")
 	ole.NewProc("CoInitializeEx").Call(0, 2)
 	defer ole.NewProc("CoUninitialize").Call()
 	create := user.NewProc("CreateWindowExW")
 	def := user.NewProc("DefWindowProcW")
 	send := user.NewProc("SendMessageW")
 	set := user.NewProc("SetWindowTextW")
+	setPos := user.NewProc("SetWindowPos")
 	ptr := func(s string) *uint16 { return syscall.StringToUTF16Ptr(strings.ReplaceAll(s, "\x00", "")) }
-	var hwnd, nav, output, help uintptr
+	var hwnd, output, help uintptr
+	var footerRefresh, footerCancel, footerCamera, footerChoose uintptr
+	var navButtons []uintptr
 	var children, editors []uintptr
 	var fields []nativeField
 	var buttons []nativeButton
@@ -38,9 +42,11 @@ func openNativeDashboard(a *App) error {
 	var busy bool
 	var cameraRunning bool
 	var cancel context.CancelFunc
-	var view int
 	var generation uint64
+	var outputTop int
+	var resize func(int, int)
 	var mu sync.Mutex
+	navBaseID := 30
 	type result struct {
 		generation uint64
 		code       int
@@ -94,6 +100,11 @@ func openNativeDashboard(a *App) error {
 				}
 			}
 			return 1
+		case 0x0005:
+			if resize != nil {
+				resize(int(uint32(l)), int(uint32(l>>16)))
+			}
+			return 0
 		case 0x0010:
 			if cancel != nil {
 				cancel()
@@ -122,13 +133,8 @@ func openNativeDashboard(a *App) error {
 			return 0
 		case 0x0111:
 			id := int(w & 0xffff)
-			if id == 10 && w>>16 == 1 {
-				if busy {
-					send.Call(nav, 0x0186, uintptr(view), 0)
-					return 0
-				}
-				selected, _, _ := send.Call(nav, 0x0188, 0, 0)
-				render(int(selected))
+			if id >= navBaseID && id < navBaseID+len(navButtons) && !busy {
+				render(id - navBaseID)
 				return 0
 			}
 			if id == 20 {
@@ -214,29 +220,65 @@ func openNativeDashboard(a *App) error {
 		return fmt.Errorf("register native window: %v", err)
 	}
 	defer user.NewProc("UnregisterClassW").Call(uintptr(unsafe.Pointer(name)), instance)
-	// Fixed client layout keeps every form visible at the tested design dimensions.
+	// Start at a compact desktop size; WM_SIZE keeps the main regions usable when resized.
 	screenHeight, _, _ := user.NewProc("GetSystemMetrics").Call(1)
 	windowHeight := min(900, max(640, int(screenHeight)-80))
 	footerY := windowHeight - 85
-	hwnd, _, err := create.Call(0, uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(ptr("OneSpace"))), 0x00ca0000|0x10000000, 60, 30, 1120, uintptr(windowHeight), 0, 0, instance, 0)
+	hwnd, _, err := create.Call(0x10000, uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(ptr("OneSpace"))), 0x00cf0000|0x10000000, 60, 30, 1120, uintptr(windowHeight), 0, 0, instance, 0)
 	if hwnd == 0 {
 		return fmt.Errorf("create native window: %v", err)
 	}
-	nav = control("LISTBOX", "", 0x800000|0x10000|1, 12, 15, 175, footerY-30, 10)
+	// Use the Windows compositor when available; older Windows versions keep the same controls.
+	dwmSetAttribute := dwm.NewProc("DwmSetWindowAttribute")
+	darkMode := uint32(1)
+	backdrop := uint32(3)
+	corner := uint32(2)
+	dwmSetAttribute.Call(hwnd, 20, uintptr(unsafe.Pointer(&darkMode)), unsafe.Sizeof(darkMode))
+	dwmSetAttribute.Call(hwnd, 38, uintptr(unsafe.Pointer(&backdrop)), unsafe.Sizeof(backdrop))
+	dwmSetAttribute.Call(hwnd, 33, uintptr(unsafe.Pointer(&corner)), unsafe.Sizeof(corner))
 	pages := a.nativePages()
-	for _, p := range pages {
-		send.Call(nav, 0x0180, 0, uintptr(unsafe.Pointer(ptr(p.Name))))
+	navY := 15
+	for i, p := range pages {
+		nb := control("BUTTON", p.Name, 0x10000, 12, navY, 175, 30, navBaseID+i)
+		navButtons = append(navButtons, nb)
+		navY += 36
 	}
-	control("BUTTON", "Refresh", 0x10000, 12, footerY, 175, 30, 20)
-	control("BUTTON", "Cancel transfer", 0x10000, 200, footerY, 175, 30, 21)
-	control("BUTTON", "Live camera", 0x10000, 390, footerY, 175, 30, 22)
-	control("BUTTON", "Choose file…", 0x10000, 580, footerY, 175, 30, 23)
+	footerRefresh = control("BUTTON", "Refresh", 0x10000, 12, footerY, 175, 30, 20)
+	footerCancel = control("BUTTON", "Cancel transfer", 0x10000, 200, footerY, 175, 30, 21)
+	footerCamera = control("BUTTON", "Live camera", 0x10000, 390, footerY, 175, 30, 22)
+	footerChoose = control("BUTTON", "Choose file…", 0x10000, 580, footerY, 175, 30, 23)
+	resize = func(width, height int) {
+		if width < 720 {
+			width = 720
+		}
+		if height < 520 {
+			height = 520
+		}
+		footerY := height - 85
+		move := func(h uintptr, x, y, w, hgt int) {
+			if h != 0 {
+				setPos.Call(h, 0, uintptr(x), uintptr(y), uintptr(w), uintptr(hgt), 0x0014)
+			}
+		}
+		ny := 15
+		for _, nb := range navButtons {
+			if nb != 0 {
+				move(nb, 12, ny, 175, 30)
+			}
+			ny += 36
+		}
+		move(footerRefresh, 12, footerY, 175, 30)
+		move(footerCancel, 200, footerY, 175, 30)
+		move(footerCamera, 390, footerY, 175, 30)
+		move(footerChoose, 580, footerY, 175, 30)
+		move(help, 200, 15, max(300, width-220), 55)
+		move(output, 205, outputTop, max(300, width-250), max(80, footerY-20-outputTop))
+	}
 	render = func(index int) {
 		if index < 0 || index >= len(pages) {
 			return
 		}
 		generation++
-		view = index
 		for _, c := range children {
 			user.NewProc("DestroyWindow").Call(c)
 		}
@@ -285,6 +327,7 @@ func openNativeDashboard(a *App) error {
 			y += ((len(buttons) + 2) / 3) * 36
 		}
 		y += 8
+		outputTop = y
 		output = control("EDIT", "", 0x800000|0x200000|0x100000|0x4|0x800|0x40|0x10000, 205, y, 870, max(80, footerY-20-y), 0)
 		send.Call(output, 0x00c5, 8<<20, 0)
 		children = append(children, output)
@@ -294,8 +337,8 @@ func openNativeDashboard(a *App) error {
 			}
 		}
 		refresh()
+		resize(1120, windowHeight)
 	}
-	send.Call(nav, 0x0186, 0, 0)
 	render(0)
 	type point struct{ X, Y int32 }
 	type message struct {

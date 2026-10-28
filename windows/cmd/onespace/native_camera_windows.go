@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"io"
 	"path/filepath"
@@ -41,6 +42,27 @@ func openNativeCamera(a *App) error {
 		return err
 	}
 	defer cli.CloseIdleConnections()
+	statusResponse, err := hubRequest(context.Background(), cli, c, "GET", "/hub/v1/camera/status", "", nil)
+	if err != nil {
+		return errors.New("camera status unavailable")
+	}
+	var status struct {
+		ICEServers []struct {
+			URLs       []string `json:"urls"`
+			Username   string   `json:"username,omitempty"`
+			Credential string   `json:"credential,omitempty"`
+		} `json:"iceServers"`
+	}
+	if err := json.NewDecoder(statusResponse.Body).Decode(&status); err != nil {
+		statusResponse.Body.Close()
+		return errors.New("invalid camera status")
+	}
+	statusResponse.Body.Close()
+	iceServers, err := json.Marshal(status.ICEServers)
+	if err != nil {
+		return errors.New("cannot prepare camera network configuration")
+	}
+	iceJSON := strings.ReplaceAll(string(iceServers), "<", "\\u003c")
 	w := webview.NewWithOptions(webview.WebViewOptions{Configure: func(browser *edge.Chromium) {
 		browser.SetGlobalPermission(edge.CoreWebView2PermissionStateDeny)
 		browser.WebResourceRequestedCallback = func(_ *edge.ICoreWebView2WebResourceRequest, args *edge.ICoreWebView2WebResourceRequestedEventArgs) {
@@ -116,15 +138,17 @@ func openNativeCamera(a *App) error {
 	}
 	// No script bindings expose hub credentials, arbitrary network access or files.
 	// The content contains no user-provided HTML or navigation links.
-	w.SetHtml(strings.ReplaceAll(nativeCameraHTML, "__VIEWER_NONCE__", nonce))
+	html := strings.ReplaceAll(nativeCameraHTML, "__VIEWER_NONCE__", nonce)
+	html = strings.ReplaceAll(html, "__ICE_SERVERS__", iceJSON)
+	w.SetHtml(html)
 	w.Run()
 	return nil
 }
 
 const nativeCameraHTML = `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; media-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'"><style>body{background:#101820;color:#eee;font:16px system-ui;margin:16px}video{width:100%;height:75vh;background:#000}button{padding:10px;margin:8px}</style></head><body><video id="v" autoplay playsinline controls></video><p id="s">Ready. Recording is controlled separately.</p><button id="start">Connect</button><button id="stop">Disconnect</button><script>
-const credential='__VIEWER_NONCE__';let peer=null,generation=0;const state=document.getElementById('s');
+const credential='__VIEWER_NONCE__';const iceServers=__ICE_SERVERS__;let peer=null,generation=0;const state=document.getElementById('s');
 async function stop(){generation++;if(peer){peer.close();peer=null}document.getElementById('v').srcObject=null;await closeCamera(credential);state.textContent='Disconnected'}
 document.getElementById('stop').onclick=()=>stop().catch(()=>{});
-document.getElementById('start').onclick=async()=>{await stop();const stamp=generation;try{const p=new RTCPeerConnection({iceServers:[]});peer=p;p.addTransceiver('video',{direction:'recvonly'});p.ontrack=e=>{if(stamp===generation)document.getElementById('v').srcObject=e.streams[0]||new MediaStream([e.track])};p.onconnectionstatechange=()=>{if(stamp===generation)state.textContent='Video connection: '+p.connectionState};await p.setLocalDescription(await p.createOffer());await new Promise((resolve,reject)=>{if(p.iceGatheringState==='complete')return resolve();const timer=setTimeout(()=>reject(Error('Network negotiation timed out')),6000);p.onicegatheringstatechange=()=>{if(p.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});if(stamp!==generation)return;const answer=await openCamera(credential,p.localDescription.sdp);if(stamp!==generation){await closeCamera(credential);return}await p.setRemoteDescription({type:'answer',sdp:answer})}catch(e){await stop();state.textContent=e.message}};
+document.getElementById('start').onclick=async()=>{await stop();const stamp=generation;try{const p=new RTCPeerConnection({iceServers:iceServers,bundlePolicy:'max-bundle'});peer=p;p.addTransceiver('video',{direction:'recvonly'});p.ontrack=e=>{if(stamp===generation)document.getElementById('v').srcObject=e.streams[0]||new MediaStream([e.track])};p.onconnectionstatechange=()=>{if(stamp===generation)state.textContent='Video connection: '+p.connectionState};await p.setLocalDescription(await p.createOffer());await new Promise((resolve,reject)=>{if(p.iceGatheringState==='complete')return resolve();const timer=setTimeout(()=>reject(Error('Network negotiation timed out')),6000);p.onicegatheringstatechange=()=>{if(p.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});if(stamp!==generation)return;const answer=await openCamera(credential,p.localDescription.sdp);if(stamp!==generation){await closeCamera(credential);return}await p.setRemoteDescription({type:'answer',sdp:answer})}catch(e){await stop();state.textContent=e.message}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop().catch(()=>{})});window.addEventListener('pagehide',()=>{if(peer)peer.close();closeCamera(credential).catch(()=>{})});
 </script></body></html>`
