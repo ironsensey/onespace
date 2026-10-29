@@ -6,7 +6,6 @@ class BrowserDecodedFrameReporter {
   constructor() {
     this.frames = 0;
     this.candidatePair = {};
-    this.videoElement = null;
   }
 
   async run() {
@@ -37,14 +36,15 @@ class BrowserDecodedFrameReporter {
         '--no-first-run',
         '--password-store=basic',
         '--disable-speech-api',
-        '--disable-web-security',
-        '--allow-running-insecure-content',
         '--disable-features=VizDisplayCompositor'
       ]
     });
 
     try {
-      const context = await browser.newContext();
+      const context = await browser.newContext({
+        ignoreHTTPSErrors: true
+      });
+
       const page = await context.newPage();
       await page.goto('about:blank');
 
@@ -61,17 +61,15 @@ class BrowserDecodedFrameReporter {
 
       const result = await page.evaluate(async (config) => {
         const pc = new RTCPeerConnection({
-          iceServers: [],
-          iceTransportPolicy: config.forceRelay ? 'relay' : undefined
-        });
-
-        if (config.turnUrl) {
-          pc.iceServers.push({
+          iceServers: config.turnUrl ? [{
             urls: config.turnUrl,
             username: config.turnUsername,
             credential: config.turnCredential
-          });
-        }
+          }] : [],
+          iceTransportPolicy: config.forceRelay ? 'relay' : undefined
+        });
+
+        pc.addTransceiver('video', { direction: 'recvonly' });
 
         const videoElement = document.createElement('video');
         videoElement.muted = true;
@@ -84,28 +82,30 @@ class BrowserDecodedFrameReporter {
         let candidatePair = {};
         let connectionState = 'new';
         let iceGatheringState = 'new';
-        const iceCandidates = [];
-        const remoteCandidates = [];
+        let videoWidth = 0;
+        let videoHeight = 0;
+        let isPlaying = false;
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
-            iceCandidates.push({
-              id: event.candidate.candidate,
-              type: event.candidate.candidateType
-            });
+            console.log('ICE candidate:', event.candidate.candidateType, event.candidate.candidate);
+          } else {
+            console.log('ICE gathering complete');
           }
-        };
-
-        pc.onicecandidateerror = (event) => {
-          console.log('ICE candidate error:', event.errorCode, event.errorText);
         };
 
         pc.onicegatheringstatechange = () => {
           iceGatheringState = pc.iceGatheringState;
+          console.log('ICE gathering state:', iceGatheringState);
         };
 
         pc.onconnectionstatechange = () => {
           connectionState = pc.connectionState;
+          console.log('Connection state:', connectionState);
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          console.log('ICE connection state:', pc.iceConnectionState);
         };
 
         pc.ontrack = (track) => {
@@ -113,8 +113,25 @@ class BrowserDecodedFrameReporter {
           if (track.kind === 'video') {
             videoElement.srcObject = new MediaStream([track]);
             videoElement.onloadedmetadata = () => {
-              videoElement.play().catch(e => console.log('Play failed:', e));
+              videoWidth = videoElement.videoWidth;
+              videoHeight = videoElement.videoHeight;
+              console.log('Video dimensions:', videoWidth, 'x', videoHeight);
+              videoElement.play().then(() => {
+                isPlaying = true;
+                console.log('Video playing');
+              }).catch(e => console.log('Play failed:', e));
             };
+
+            if ('requestVideoFrameCallback' in videoElement) {
+              const countFrames = () => {
+                if (videoElement.readyState >= 2) {
+                  frames++;
+                  console.log('Decoded video frame:', frames, videoWidth, 'x', videoHeight);
+                }
+                videoElement.requestVideoFrameCallback(countFrames);
+              };
+              videoElement.requestVideoFrameCallback(countFrames);
+            }
           }
         };
 
@@ -122,13 +139,78 @@ class BrowserDecodedFrameReporter {
         await pc.setLocalDescription(offer);
         console.log('Local description set');
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const iceDeadline = Date.now() + 6000;
+        while (pc.iceGatheringState !== 'complete' && Date.now() < iceDeadline) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        console.log('ICE gathering finished:', pc.iceGatheringState);
+
+        const sessionResponse = await fetch(config.coordinator + '/v1/coord/sessions', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + config.viewerToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ viewer: config.viewerId, target: config.targetId })
+        });
+
+        if (!sessionResponse.ok) {
+          throw new Error('Failed to create session: ' + sessionResponse.status);
+        }
+
+        const sessionData = await sessionResponse.json();
+        const sessionId = sessionData.session;
+        console.log('Session created:', sessionId);
+
+        const offerResponse = await fetch(config.coordinator + '/v1/coord/sessions/' + sessionId + '/messages?from=' + config.viewerId, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + config.viewerToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ type: 'offer', body: pc.localDescription.sdp })
+        });
+
+        if (!offerResponse.ok) {
+          throw new Error('Failed to send offer: ' + offerResponse.status);
+        }
+        console.log('Offer sent');
+
+        let answerReceived = false;
+        const pollDeadline = Date.now() + 30000;
+        while (!answerReceived && Date.now() < pollDeadline) {
+          const pollResponse = await fetch(config.coordinator + '/v1/coord/sessions/' + sessionId + '/poll?for=' + config.viewerId, {
+            headers: { 'Authorization': 'Bearer ' + config.viewerToken }
+          });
+
+          if (pollResponse.ok) {
+            const messages = await pollResponse.json();
+            for (const msg of messages) {
+              if (msg.type === 'answer') {
+                await pc.setRemoteDescription(new RTCSessionDescription(msg.body, 'answer'));
+                answerReceived = true;
+                console.log('Answer received and set');
+                break;
+              }
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        if (!answerReceived) {
+          throw new Error('No answer received from coordinator');
+        }
+
+        const frameDeadline = Date.now() + 15000;
+        while (frames < 1 && Date.now() < frameDeadline) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
         const stats = await pc.getStats();
         const localCandidates = [];
-        const remoteCandidatesFinal = [];
+        const remoteCandidates = [];
 
-        const statsReports = stats instanceof Array ? stats : Object.values(stats);
+        const statsReports = stats instanceof Map ? Array.from(stats.values()) : Object.values(stats);
         for (const report of statsReports) {
           if (report.type === 'local-candidate') {
             localCandidates.push({
@@ -137,7 +219,7 @@ class BrowserDecodedFrameReporter {
               priority: report.priority || 0
             });
           } else if (report.type === 'remote-candidate') {
-            remoteCandidatesFinal.push({
+            remoteCandidates.push({
               id: report.id,
               type: report.candidateType,
               priority: report.priority || 0
@@ -148,7 +230,7 @@ class BrowserDecodedFrameReporter {
                 local: report.localCandidateId || '',
                 remote: report.remoteCandidateId || '',
                 localType: localCandidates.find(c => c.id === report.localCandidateId)?.type || '',
-                remoteType: remoteCandidatesFinal.find(c => c.id === report.remoteCandidateId)?.type || '',
+                remoteType: remoteCandidates.find(c => c.id === report.remoteCandidateId)?.type || '',
                 state: report.state
               };
               console.log('Selected candidate pair:', candidatePair);
@@ -156,33 +238,55 @@ class BrowserDecodedFrameReporter {
           }
         }
 
+        try {
+          await fetch(config.coordinator + '/v1/coord/sessions/' + sessionId + '/close?by=' + config.viewerId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + config.viewerToken }
+          });
+        } catch (e) {
+          console.log('Session close error:', e);
+        }
+
         if (frames < 1) {
           throw new Error('No decoded video frames received');
+        }
+
+        if (videoWidth <= 0 || videoHeight <= 0) {
+          throw new Error('Invalid video dimensions: ' + videoWidth + 'x' + videoHeight);
+        }
+
+        if (!isPlaying) {
+          throw new Error('Video not playing');
         }
 
         if (config.forceRelay) {
           const selectedLocal = localCandidates.find(c => c.id === candidatePair.local);
           if (!selectedLocal || selectedLocal.type !== 'relay') {
-            throw new Error('Forced relay did not select a relay pair: ' + JSON.stringify(candidatePair));
+            throw new Error('Forced relay did not select a relay pair: ' + JSON.stringify(candidatePair) + '; local: ' + JSON.stringify(selectedLocal));
           }
         }
 
         return {
           decodedFrames: frames,
           candidatePair: candidatePair,
-          localCandidates: localCandidates,
-          remoteCandidates: remoteCandidatesFinal
+          videoWidth: videoWidth,
+          videoHeight: videoHeight,
+          isPlaying: isPlaying
         };
+
       }, config);
 
       const output = {
         decodedFrames: result.decodedFrames,
-        candidatePair: result.candidatePair
+        candidatePair: result.candidatePair,
+        videoWidth: result.videoWidth,
+        videoHeight: result.videoHeight,
+        isPlaying: result.isPlaying
       };
 
       console.log('Test completed successfully');
       console.log('Final result:', JSON.stringify(output));
-      
+
       return output;
 
     } catch (error) {
@@ -209,3 +313,4 @@ main().catch((error) => {
   console.error('Receiver startup failed:', error);
   process.exit(1);
 });
+EOF
