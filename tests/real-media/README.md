@@ -43,10 +43,17 @@ TURN_CREDENTIAL=testpassword \
 FORCE_RELAY=1 docker compose --profile turn run --rm receiver
 ```
 
+The receiver uses Playwright's request context for coordinator HTTP (the page is
+`about:blank`, so page-side `fetch` would be blocked by CORS) and runs WebRTC in
+headless Chromium. A bounded readiness check retries coordinator session creation
+until a deadline instead of a fixed sleep.
+
 With `FORCE_RELAY=1` the receiver uses `iceTransportPolicy: "relay"` and fails
-unless the selected candidate pair is `relay`/`relay` AND at least one video
-frame is decoded. Merely configuring a TURN URL or observing a coturn
-allocation is insufficient; the selected media path must be relayed.
+unless at least one video frame is decoded AND the viewer's LOCAL candidate in
+the selected pair is `relay`. MediaMTX is not configured for relay, so the
+remote side is host/srflx; requiring `relay`/`relay` would incorrectly reject a
+viewer-only TURN path. Merely configuring a TURN URL or observing a coturn
+allocation is insufficient; the viewer's selected media path must use TURN.
 
 These credentials are disposable fixture credentials, not a production
 credential scheme. Production clients must use short-lived coturn REST
