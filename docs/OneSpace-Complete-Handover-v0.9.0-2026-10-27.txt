@@ -538,44 +538,55 @@ The appendices below preserve detail and historical evidence. Older planned
 items remain plans unless confirmed by the current implementation record above.
 
 
-29. FORCED-TURN FIX RESULT (29 October 2026)
+29. FORCED-TURN TEST STATE (29 October 2026)
 --------------------------------------------
-Root cause: CI forced-TURN job used aiortc 1.9.0 as the WebRTC receiver.
+Root cause: CI forced-TURN job uses aiortc 1.9.0 as the WebRTC receiver.
 aiortc 1.9.0 getStats() emits only inbound-rtp, outbound-rtp,
-remote-outbound-rtp and transport reports — no candidate-pair, local-candidate
+remote-outbound-rtp and transport reports — NO candidate-pair, local-candidate
 or remote-candidate reports — and its ICE gatherer hardcodes aioice
 TransportPolicy.ALL. Therefore it cannot force relay-only selection and cannot
 report the selected pair's candidateType. A decoded frame alone does NOT prove
 the selected media path was relayed; merely configuring a TURN URL or seeing a
 coturn allocation is insufficient.
 
-Fix (commit 25d8c63, pushed to dev/onespace-independent-connect):
-- Replaced tests/real-media/receiver.py (aiortc) with tests/real-media/receiver.js,
-  a headless Chromium/Playwright harness.
-- Chromium supports iceTransportPolicy:"relay" (relay-only candidate selection)
-  and RTCIceTransport.getSelectedCandidatePair() (selected pair candidate types).
-- The receiver still requires decoded video frames AND, in FORCE_RELAY=1 mode,
-  fails unless the selected pair is relay/relay. TLS verification, coordinator
-  authorization, non-trickle ICE, offer/answer through the coordinator, and
-  session cleanup are unchanged.
-- Dockerfile.receiver now builds node:20-slim + playwright@1.48.0 + chromium
-  (with deps); docker-compose receiver runs `sleep 8; exec node /receiver.js`.
-- README documents that aiortc cannot prove relay and that the browser harness is
-  the trustworthy forced-TURN evidence.
+Current state (commit 5eb2c53, pushed to dev/onespace-independent-connect):
+- tests/real-media/receiver.py restored to the aiortc 1.9.0 harness as it was
+  at commit c637155 (the last state where the direct real-media test passed).
+  receiver.js (headless Chromium/Playwright) was REMOVED: its Docker image could
+  not be CI-verified (no Docker on this Windows host; CI job logs return 403) and
+  repeatedly failed `docker compose build` (~24s), breaking the previously-passing
+  direct-media test. Per the task, no speculative dependency bumps or repeated
+  unchanged reruns.
+- Dockerfile.receiver and docker-compose.yml restored to the c637155
+  python/aiortc configuration (`sleep 8; exec python /receiver.py`).
 
-Local verification available on this host (no Docker/Linux here, so the media
-fixture itself could NOT be executed):
-- `go test -count=1 ./camera/... ./coordination/...` PASSED, including the new
-  TestGatewayStatusRefreshesICEProviderPerRequest,
-  TestCameraTURNURLsAndShortLivedCredentials,
-  TestCameraTURNURLsRejectInvalidConfiguration and
-  TestCameraICEServersAcceptTurnTransportQuery tests.
-- `go vet ./camera/... ./coordination/... ./cmd/onespace-hub/...` clean.
+Confirmed evidence:
+- Direct real-media test PASSES: CI run 40842667865 (commit c637155) step 3
+  "Run direct real-media decoded-frame test" passed in ~71s with
+  {"decodedFrames": 1}. receiver.py is byte-identical to c637155, so CI run
+  40850088325 (commit 5eb2c53) step 3 is expected to pass again.
+  windows, linux-camera and security jobs all passed in run 40850088325.
+- Forced-TURN step CANNOT be proven with aiortc 1.9.0: since no candidate-pair/
+  local-candidate/remote-candidate stats exist and there is no relay-only ICE
+  policy, the viewer's selected local candidate type is never reported, so the
+  forced-TURN assertion always fails at step 4 (as it did in run
+  40842667865 step 4, ~25s). The media job therefore fails overall on step 4,
+  matching the c637155 baseline.
 
-CI status: the branch workflow (.github/workflows/independent-validation.yml)
-media job must re-run on GitHub (Linux/Docker runner) to confirm the forced-TURN
-decoded-frames + relay/relay result. This Windows host cannot run Docker, so the
-fixture result is not yet evidenced in a CI run here.
+Required next step for forced-TURN (not yet CI-validated here):
+- Replace/add a browser receiver (headless Chromium via Playwright) using
+  iceTransportPolicy:"relay" (relay-only candidate selection) and
+  RTCIceTransport.getSelectedCandidatePair() (selected pair candidate types).
+  Require decoded frames AND viewer local candidate type == relay. This is the
+  trustworthy forced-TURN evidence, but it could not be validated in CI from this
+  host (no Docker; CI logs inaccessible). Reproducible command:
+    cd tests/real-media
+    docker compose --profile turn up -d mediamtx publisher coordinator bridge coturn
+    TURN_URL=turn:coturn:3478?transport=udp TURN_USERNAME=testuser \
+      TURN_CREDENTIAL=testpassword FORCE_RELAY=1 \
+      docker compose --profile turn run --rm receiver
+  (This runs the same receiver service; swapping to a Playwright receiver and
+   asserting viewer local==relay is the remaining work.)
 
 Remaining blockers (unchanged scope, not part of this fix):
 - No public coordinator or TURN service is deployed; no Internet-reachable Pi
