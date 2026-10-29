@@ -39,20 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run forced TURN decoded-frame test
-        working-directory: tests/real-media
-        run: |
-          docker compose --profile turn up -d mediamtx publisher coordinator bridge coturn
-          trap 'docker compose --profile turn down -v' EXIT
-          echo "=== Services started ==="
-          docker compose --profile turn ps
-          echo "=== Coturn logs ==="
-          docker compose --profile turn logs coturn --tail=20 || true
-          echo "=== Running receiver ==="
-          TURN_URL=turn:coturn:3478?transport=udp \
-          TURN_USERNAME=testuser \
-          TURN_CREDENTIAL=testpassword \
-          FORCE_RELAY=1 docker compose --profile turn run --rm receiver
-          echo "=== Receiver completed ==="
+        run: sh tests/real-media/run-turn.sh
       - name: Upload receiver output
         if: always()
         uses: actions/upload-artifact@v4
