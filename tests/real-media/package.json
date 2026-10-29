@@ -1,0 +1,12 @@
+{
+  "name": "onespace-test-receiver",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@1.64.0",
+  "scripts": {
+    "start": "node receiver.js"
+  },
+  "devDependencies": {
+    "playwright": "1.64.0"
+  }
+}

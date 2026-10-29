@@ -12,29 +12,43 @@ Requirements on a supported Linux host:
 - Linux networking (the fixture does not use the user's Pi, router, or TURN
   configuration).
 
-Run:
+The receiver uses headless Chromium (Playwright) for forced-TURN testing, which is required because aiortc 1.9.0 cannot prove relay (no candidate-pair/local-candidate/remote-candidate stats and no relay-only ICE policy). The browser harness supports `iceTransportPolicy:"relay"` (relay-only selection) and `RTCIceTransport.getSelectedCandidatePair()` (selected candidate types), which is the trustworthy evidence forced-TURN requires.
 
+Build (run in `tests/real-media`):
 ```sh
-cd tests/real-media
-sh run.sh
+# Build the Node.js image with Playwright + Chromium
+docker build -t onespace-test-receiver .
+
+# Run with a running coordinator and bridge (see docker-compose.yml)
+# Environment variables for the browser receiver (same as aiortc version):
+# COORDINATOR=https://coordinator:47604
+# VIEWER_TOKEN=windows-test-token
+# VIEWER_ID=windows
+# TARGET_ID=pi
+# TURN_URL=          # optional
+# TURN_USERNAME=     # optional
+# TURN_CREDENTIAL=   # optional
+# FORCE_RELAY=0      # set 1 to force relay-only candidate selection
+
+docker run --rm \
+  -e COORDINATOR=$COORDINATOR \
+  -e VIEWER_TOKEN=$VIEWER_TOKEN \
+  -e VIEWER_ID=$VIEWER_ID \
+  -e TARGET_ID=$TARGET_ID \
+  -e TURN_URL=$TURN_URL \
+  -e TURN_USERNAME=$TURN_USERNAME \
+  -e TURN_CREDENTIAL=$TURN_CREDENTIAL \
+  -e FORCE_RELAY=$FORCE_RELAY \
+  onespace-test-receiver
 ```
 
-The test is non-trickle ICE. The receiver waits for ICE gathering to complete,
-posts the complete SDP offer through the coordinator, and waits for decoded
-frames. A successful SDP answer without a decoded frame is a failure.
+The Playwright Dockerfile uses `npm ci` with pinned Playwright@1.64.0 (the version that exists on npm). The image includes Chromium with `npx playwright install chromium --with-deps`, which resolves the previous `"idealTree" already exists` error.
 
-The default fixture verifies coordinator-to-bridge MediaMTX media flow and
-records the selected candidate pair. It does not prove Internet reachability.
-The Compose TURN profile starts temporary coturn with test-only credentials:
+The forced-TURN test still requires decoded frames and, in `FORCE_RELAY=1` mode, a selected viewer-local candidate type == `relay`. MediaMTX is not relay-configured, so only viewer-side relay is expected.
 
-```sh
-docker compose --profile turn up -d
-TURN_URL=turn:coturn:3478?transport=udp \
-TURN_USERNAME=testuser \
-TURN_CREDENTIAL=testpassword \
-FORCE_RELAY=1 docker compose --profile turn run --rm receiver
+For Compose integration, replace the `entrypoint` line in `docker-compose.yml`:
+```yaml
+receiver:
+  entrypoint: ["node", "/app/receiver.js"]
 ```
 
-These credentials are disposable fixture credentials, not a production
-credential scheme. Production clients must use short-lived coturn REST
-credentials. The receiver asserts `candidateType=relay` in forced-relay mode.

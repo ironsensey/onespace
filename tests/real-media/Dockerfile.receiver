@@ -1,5 +1,14 @@
-FROM python:3.12-bookworm
-RUN pip install --no-cache-dir aiortc==1.9.0 aiohttp==3.10.11
-COPY receiver.py /receiver.py
-ENTRYPOINT ["python", "/receiver.py"]
+FROM node:20-slim
 
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+RUN npx playwright install chromium --with-deps
+
+COPY receiver.js ./
+
+ENTRYPOINT ["node", "/app/receiver.js"]
