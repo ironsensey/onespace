@@ -118,7 +118,11 @@ async def main():
                 candidate_pair.get("localType") != "relay"
                 and candidate_pair.get("remoteType") != "relay"
             ):
-                raise RuntimeError(f"forced relay did not select a relay pair: {candidate_pair}")
+                report_types = sorted({report.type for report in stats.values()})
+                raise RuntimeError(
+                    f"forced relay did not select a relay pair: "
+                    f"{candidate_pair}; stats={report_types}"
+                )
             print(json.dumps({"decodedFrames": frames, "candidatePair": candidate_pair}))
         finally:
             await request(session, "DELETE", f"/v1/coord/sessions/{session_id}/close?by={VIEWER}")
