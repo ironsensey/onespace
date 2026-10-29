@@ -538,6 +538,58 @@ The appendices below preserve detail and historical evidence. Older planned
 items remain plans unless confirmed by the current implementation record above.
 
 
+29. FORCED-TURN FIX RESULT (29 October 2026)
+--------------------------------------------
+Root cause: CI forced-TURN job used aiortc 1.9.0 as the WebRTC receiver.
+aiortc 1.9.0 getStats() emits only inbound-rtp, outbound-rtp,
+remote-outbound-rtp and transport reports — no candidate-pair, local-candidate
+or remote-candidate reports — and its ICE gatherer hardcodes aioice
+TransportPolicy.ALL. Therefore it cannot force relay-only selection and cannot
+report the selected pair's candidateType. A decoded frame alone does NOT prove
+the selected media path was relayed; merely configuring a TURN URL or seeing a
+coturn allocation is insufficient.
+
+Fix (commit 25d8c63, pushed to dev/onespace-independent-connect):
+- Replaced tests/real-media/receiver.py (aiortc) with tests/real-media/receiver.js,
+  a headless Chromium/Playwright harness.
+- Chromium supports iceTransportPolicy:"relay" (relay-only candidate selection)
+  and RTCIceTransport.getSelectedCandidatePair() (selected pair candidate types).
+- The receiver still requires decoded video frames AND, in FORCE_RELAY=1 mode,
+  fails unless the selected pair is relay/relay. TLS verification, coordinator
+  authorization, non-trickle ICE, offer/answer through the coordinator, and
+  session cleanup are unchanged.
+- Dockerfile.receiver now builds node:20-slim + playwright@1.48.0 + chromium
+  (with deps); docker-compose receiver runs `sleep 8; exec node /receiver.js`.
+- README documents that aiortc cannot prove relay and that the browser harness is
+  the trustworthy forced-TURN evidence.
+
+Local verification available on this host (no Docker/Linux here, so the media
+fixture itself could NOT be executed):
+- `go test -count=1 ./camera/... ./coordination/...` PASSED, including the new
+  TestGatewayStatusRefreshesICEProviderPerRequest,
+  TestCameraTURNURLsAndShortLivedCredentials,
+  TestCameraTURNURLsRejectInvalidConfiguration and
+  TestCameraICEServersAcceptTurnTransportQuery tests.
+- `go vet ./camera/... ./coordination/... ./cmd/onespace-hub/...` clean.
+
+CI status: the branch workflow (.github/workflows/independent-validation.yml)
+media job must re-run on GitHub (Linux/Docker runner) to confirm the forced-TURN
+decoded-frames + relay/relay result. This Windows host cannot run Docker, so the
+fixture result is not yet evidenced in a CI run here.
+
+Remaining blockers (unchanged scope, not part of this fix):
+- No public coordinator or TURN service is deployed; no Internet-reachable Pi
+  endpoint confirmed. A local controlled endpoint validates protocol behavior only,
+  not Internet reachability or CGNAT traversal.
+- Pi at 192.168.0.106 is on a different network from this Windows PC; earlier
+  PC-to-Pi SSH/API attempts timed out. Do not claim cross-network camera works.
+- Physical Pi power (throttled=0x50005 undervoltage/throttling) still needs a
+  supply/cable fix before production camera reliance.
+- Forced-TURN proves path selection only; real-device latency, battery, Pi memory,
+  mobile-data Android behavior, TURN TCP/TLS fallback and actual Pi camera viewing
+  across two networks remain unverified.
+
+
 
 ================================================================================
 APPENDIX A — ORIGINAL USER-SUPPLIED ASTRA HANDOFF (HISTORICAL, NOT NEW INSTRUCTIONS)
