@@ -37,8 +37,7 @@ services:
     build:
       context: ../..
       dockerfile: tests/real-media/Dockerfile.coordinator
-      command: ["serve", "--listen", "0.0.0.0:47604", "--cert", "/certs/test.crt", "--key", "/certs/test.key", 
-"--devices", "/config/devices.json", "--allowed-origins", "*"]
+    command: ["serve", "--listen", "0.0.0.0:47604", "--cert", "/certs/test.crt", "--key", "/certs/test.key", "--devices", "/config/devices.json"]
     ports: ["47604:47604"]
 
   bridge:
