@@ -8,9 +8,10 @@ Remote camera viewing has two separate paths:
    when possible and TURN when direct candidates cannot connect.
 
 The Pi must have a reachable public IPv6 address, or a public IPv4 address with
-router port forwarding. A DNS name is optional but recommended for changing
-addresses. Carrier-grade NAT without reachable IPv6 or another reachable TURN
-endpoint cannot be solved by OneSpace alone.
+router port forwarding for this self-hosted deployment. A DNS name is optional
+but recommended for changing addresses. Carrier-grade NAT without reachable
+IPv6 cannot be solved by a TURN server hosted on that same Pi: an externally
+reachable TURN service and an outbound signaling coordinator are required.
 
 Pi firewall/router forwarding
 -----------------------------
@@ -36,8 +37,9 @@ TURN setup
 ----------
 
 Run hub/deploy/install-turn.sh as root on the Pi with its public IPv6 address
-or DNS name. The script installs coturn, creates a temporary long-term
-credential, writes the hub ICE configuration, and enables the service. Review
+or DNS name. The script installs coturn, creates a root-only REST-auth secret, writes the
+hub ICE configuration, and enables the service. The hub derives short-lived
+credentials per authorized status request. Review
 the generated firewall rules and keep the credential files readable only by
 root and the onespace-hub service account.
 
@@ -60,4 +62,6 @@ If signaling succeeds but frames do not arrive, check:
 
 Confirm that the configured public address is reachable, the TURN relay range
 is forwarded, and the Pi is not reporting undervoltage or sustained overload.
-No universal CGNAT traversal or hosted relay is included.
+No universal CGNAT traversal, outbound signaling coordinator, or hosted relay is
+included in this repository. A controlled local endpoint can validate protocol
+behavior, but cannot prove Internet reachability.

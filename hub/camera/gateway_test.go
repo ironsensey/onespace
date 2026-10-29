@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -187,5 +188,34 @@ func TestGatewayStatusReturnsConfiguredICEServers(t *testing.T) {
 	w := request(mux, "GET", prefix+"status", "first", nil)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"iceServers"`) || !strings.Contains(w.Body.String(), "2001:db8") {
 		t.Fatalf("ICE server configuration missing: %s", w.Body.String())
+	}
+}
+
+func TestGatewayStatusRefreshesICEProviderPerRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	var calls atomic.Int32
+	mux := http.NewServeMux()
+	gateway, err := Register(mux, Config{
+		Upstream: server.URL + "/camera/whep",
+		ICEProvider: func() []ICEServer {
+			n := calls.Add(1)
+			return []ICEServer{{URLs: []string{"turn:turn.example:3478?transport=tcp"}, Username: "expiry-" + strconv.FormatInt(int64(n), 10), Credential: "short-lived"}}
+		},
+	}, func(r *http.Request) (string, bool) { return "device", true })
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gateway.Close()
+	for _, want := range []string{`"username":"expiry-1"`, `"username":"expiry-2"`} {
+		w := request(mux, "GET", prefix+"status", "first", nil)
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), want) {
+			t.Fatalf("ICE provider result missing (%s): %s", want, w.Body.String())
+		}
+	}
+	if calls.Load() != 2 {
+		t.Fatalf("ICE provider called %d times, want 2", calls.Load())
 	}
 }

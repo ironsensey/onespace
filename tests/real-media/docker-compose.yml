@@ -54,7 +54,7 @@ services:
       dockerfile: Dockerfile.receiver
     depends_on: [coordinator, bridge, publisher]
     entrypoint: ["sh", "-c"]
-    command: ["sleep 8; exec python /receiver.py"]
+    command: ["sleep 8; exec node /receiver.js"]
     environment:
       COORDINATOR: https://coordinator:47604
       VIEWER_TOKEN: windows-test-token

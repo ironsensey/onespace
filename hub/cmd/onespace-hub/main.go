@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha1"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -136,7 +139,20 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
-		gateway, err := camera.Register(h.Mux(), camera.Config{Upstream: *upstream, Recording: storage.RecordingEnabled, ICEServers: iceServers}, func(r *http.Request) (string, bool) {
+		turnURLs, err := cameraTURNURLs(os.Getenv("ONESPACE_CAMERA_TURN_URLS"))
+		if err != nil {
+			return err
+		}
+		turnSecret := os.Getenv("ONESPACE_CAMERA_TURN_SECRET")
+		if len(turnURLs) > 0 && len(turnSecret) < 32 {
+			return errors.New("ONESPACE_CAMERA_TURN_SECRET must contain at least 32 bytes when TURN URLs are configured")
+		}
+		gateway, err := camera.Register(h.Mux(), camera.Config{
+			Upstream:    *upstream,
+			Recording:   storage.RecordingEnabled,
+			ICEServers:  iceServers,
+			ICEProvider: turnProvider(turnURLs, turnSecret, 10*time.Minute),
+		}, func(r *http.Request) (string, bool) {
 			if r.RemoteAddr == "" {
 				d, ok := h.CheckPermission(r, "camera")
 				return d.ID, ok
@@ -176,6 +192,47 @@ func run(args []string) error {
 		}
 	default:
 		return errors.New("unknown command")
+	}
+}
+
+func cameraTURNURLs(raw string) ([]string, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+	var urls []string
+	if err := json.Unmarshal([]byte(raw), &urls); err != nil {
+		return nil, fmt.Errorf("ONESPACE_CAMERA_TURN_URLS must be a JSON array: %w", err)
+	}
+	if len(urls) == 0 || len(urls) > 8 {
+		return nil, errors.New("ONESPACE_CAMERA_TURN_URLS must contain 1 to 8 URLs")
+	}
+	for _, rawURL := range urls {
+		parsed, err := url.Parse(rawURL)
+		if err != nil || (parsed.Scheme != "turn" && parsed.Scheme != "turns") {
+			return nil, errors.New("ONESPACE_CAMERA_TURN_URLS accepts only turn and turns URLs")
+		}
+	}
+	if _, err := cameraICEServers(`[{"urls":` + string(mustJSON(urls)) + `,"username":"placeholder","credential":"placeholder"}]`); err != nil {
+		return nil, err
+	}
+	return urls, nil
+}
+
+func mustJSON(value any) []byte {
+	data, _ := json.Marshal(value)
+	return data
+}
+
+func turnProvider(urls []string, secret string, lifetime time.Duration) func() []camera.ICEServer {
+	if len(urls) == 0 {
+		return nil
+	}
+	return func() []camera.ICEServer {
+		expires := time.Now().Add(lifetime).Unix()
+		username := fmt.Sprintf("%d:onespace", expires)
+		mac := hmac.New(sha1.New, []byte(secret))
+		_, _ = mac.Write([]byte(username))
+		return []camera.ICEServer{{URLs: append([]string(nil), urls...), Username: username, Credential: base64.StdEncoding.EncodeToString(mac.Sum(nil))}}
 	}
 }
 

@@ -33,6 +33,8 @@ min-port=49152
 max-port=49252
 fingerprint
 lt-cred-mech
+use-auth-secret
+static-auth-secret=$secret
 realm=$realm
 server-name=$public_host
 no-cli
@@ -41,11 +43,10 @@ no-multicast-peers
 stale-nonce=600
 log-file=stdout
 simple-log
-user=onespace:$secret
 EOF
 chmod 0640 /etc/turnserver.conf
 
-ice_json=$(printf '[{"urls":["turn:%s:3478?transport=udp","turn:%s:3478?transport=tcp"],"username":"onespace","credential":"%s"}]' "$turn_host" "$turn_host" "$secret")
+turn_urls=$(printf '["turn:%s:3478?transport=udp","turn:%s:3478?transport=tcp","turns:%s:5349?transport=tcp"]' "$turn_host" "$turn_host" "$turn_host")
 if grep -q '^ONESPACE_LISTEN=127.0.0.1:47603$' /etc/onespace-hub/hub.env 2>/dev/null; then
   sed -i 's|^ONESPACE_LISTEN=.*|ONESPACE_LISTEN=[::]:47603|' /etc/onespace-hub/hub.env
 fi
@@ -54,15 +55,20 @@ if grep -q '^ONESPACE_ALLOW_PUBLIC=' /etc/onespace-hub/hub.env 2>/dev/null; then
 else
   printf 'ONESPACE_ALLOW_PUBLIC=true\n' >> /etc/onespace-hub/hub.env
 fi
-if grep -q '^ONESPACE_CAMERA_ICE_SERVERS=' /etc/onespace-hub/hub.env 2>/dev/null; then
-  sed -i "s|^ONESPACE_CAMERA_ICE_SERVERS=.*|ONESPACE_CAMERA_ICE_SERVERS='$ice_json'|" /etc/onespace-hub/hub.env
+if grep -q '^ONESPACE_CAMERA_TURN_URLS=' /etc/onespace-hub/hub.env 2>/dev/null; then
+  sed -i "s|^ONESPACE_CAMERA_TURN_URLS=.*|ONESPACE_CAMERA_TURN_URLS='$turn_urls'|" /etc/onespace-hub/hub.env
 else
-  printf '\nONESPACE_CAMERA_ICE_SERVERS=%s\n' "$ice_json" >> /etc/onespace-hub/hub.env
+  printf '\nONESPACE_CAMERA_TURN_URLS=%s\n' "$turn_urls" >> /etc/onespace-hub/hub.env
+fi
+if grep -q '^ONESPACE_CAMERA_TURN_SECRET=' /etc/onespace-hub/hub.env 2>/dev/null; then
+  sed -i "s|^ONESPACE_CAMERA_TURN_SECRET=.*|ONESPACE_CAMERA_TURN_SECRET=$secret|" /etc/onespace-hub/hub.env
+else
+  printf 'ONESPACE_CAMERA_TURN_SECRET=%s\n' "$secret" >> /etc/onespace-hub/hub.env
 fi
 chmod 0640 /etc/onespace-hub/hub.env
 
 systemctl enable coturn
 systemctl restart coturn
 systemctl restart onespace-hub.service
-echo "coturn installed with UDP/TCP 3478 and relay ports 49152-49252."
-echo "Forward TCP/UDP 3478 and UDP 49152-49252 to this Pi before remote testing."
+echo "coturn installed with short-lived REST credentials, UDP/TCP 3478, TLS 5349 and relay ports 49152-49252."
+echo "This still requires a reachable public TURN endpoint; a Pi behind CGNAT cannot host it without an external relay."

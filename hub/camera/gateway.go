@@ -27,6 +27,9 @@ type Config struct {
 	SessionTTL  time.Duration
 	Recording   func() bool
 	ICEServers  []ICEServer
+	// ICEProvider is evaluated for each status request so credentials can be
+	// short-lived. It must not return permanent TURN credentials.
+	ICEProvider func() []ICEServer
 }
 
 type ICEServer struct {
@@ -43,17 +46,18 @@ type session struct {
 }
 
 type Gateway struct {
-	upstream   *url.URL
-	authorize  func(*http.Request) (string, bool)
-	client     *http.Client
-	mu         sync.Mutex
-	sessions   map[string]*session
-	iceServers []ICEServer
-	max        int
-	ttl        time.Duration
-	stop       chan struct{}
-	closed     bool
-	recording  func() bool
+	upstream    *url.URL
+	authorize   func(*http.Request) (string, bool)
+	client      *http.Client
+	mu          sync.Mutex
+	sessions    map[string]*session
+	iceServers  []ICEServer
+	iceProvider func() []ICEServer
+	max         int
+	ttl         time.Duration
+	stop        chan struct{}
+	closed      bool
+	recording   func() bool
 }
 
 // Register accepts an administrator-supplied loopback upstream only. Never pass
@@ -85,7 +89,7 @@ func Register(mux *http.ServeMux, cfg Config, authorize func(*http.Request) (str
 	if cfg.SessionTTL <= 0 || cfg.SessionTTL > 24*time.Hour {
 		return nil, errors.New("camera session lifetime must be positive and at most 24 hours")
 	}
-	g := &Gateway{recording: cfg.Recording, upstream: u, authorize: authorize, sessions: map[string]*session{}, iceServers: append([]ICEServer(nil), cfg.ICEServers...), max: cfg.MaxSessions, ttl: cfg.SessionTTL, stop: make(chan struct{})}
+	g := &Gateway{recording: cfg.Recording, upstream: u, authorize: authorize, sessions: map[string]*session{}, iceServers: append([]ICEServer(nil), cfg.ICEServers...), iceProvider: cfg.ICEProvider, max: cfg.MaxSessions, ttl: cfg.SessionTTL, stop: make(chan struct{})}
 	g.client = &http.Client{Timeout: 8 * time.Second, Transport: &http.Transport{Proxy: nil, MaxIdleConns: 4, MaxIdleConnsPerHost: 4, IdleConnTimeout: time.Minute, ResponseHeaderTimeout: 5 * time.Second}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	mux.HandleFunc(prefix+"status", g.status)
 	mux.HandleFunc(prefix+"whep", g.offer)
@@ -127,6 +131,9 @@ func (g *Gateway) status(w http.ResponseWriter, r *http.Request) {
 	}
 	g.mu.Lock()
 	iceServers := append([]ICEServer(nil), g.iceServers...)
+	if g.iceProvider != nil {
+		iceServers = append([]ICEServer(nil), g.iceProvider()...)
+	}
 	g.mu.Unlock()
 	reply(w, 200, map[string]any{"configured": true, "reachable": reachable, "recording": g.recording != nil && g.recording(), "availability": "Live frames are verified only after playback connects", "maxSessions": g.max, "iceServers": iceServers})
 }
