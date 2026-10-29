@@ -1,12 +1,12 @@
 const { COORDINATOR, VIEWER_TOKEN, VIEWER_ID, TARGET_ID, TURN_URL, TURN_USERNAME, TURN_CREDENTIAL, FORCE_RELAY } = process.env;
 
 const { chromium } = require('playwright');
-const fs = require('fs');
 
 class BrowserDecodedFrameReporter {
   constructor() {
     this.frames = 0;
     this.candidatePair = {};
+    this.videoElement = null;
   }
 
   async run() {
@@ -24,16 +24,11 @@ class BrowserDecodedFrameReporter {
       args: [
         '--use-fake-device-for-media-stream',
         '--use-fake-ui-for-media-stream',
-        '--disable-features=MediaEngagementSignals', 
         '--disable-background-networking',
         '--disable-component-extensions-with-background-pages',
         '--disable-default-apps',
         '--disable-dev-shm-usage',
         '--disable-extensions',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--disable-rpc-warnings',
-        '--disable-default-apps',
         '--disable-background-timer-throttling',
         '--disable-renderer-backgrounding',
         '--disable-background-media-render-inactive',
@@ -41,7 +36,6 @@ class BrowserDecodedFrameReporter {
         '--disable-notifications',
         '--no-first-run',
         '--password-store=basic',
-        '--use-mock-keychain',
         '--disable-speech-api',
         '--disable-web-security',
         '--allow-running-insecure-content',
@@ -50,182 +44,136 @@ class BrowserDecodedFrameReporter {
     });
 
     try {
-      const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        ignoreHTTPSErrors: true,
-      });
-
+      const context = await browser.newContext();
       const page = await context.newPage();
-
-      console.log('Browser launched, navigating to test page...');
-
       await page.goto('about:blank');
 
-      const result = await page.evaluate(async () => {
-        const environment = {
-          coordinator: window.location.origin.includes('localhost') ? 'http://coordinator:47604' : window.location.origin,
-          viewerToken: '${VIEWER_TOKEN}',
-          viewerId: '${VIEWER_ID}',
-          targetId: '${TARGET_ID}',
-          turnUrl: '${TURN_URL}',
-          turnUsername: '${TURN_USERNAME}',
-          turnCredential: '${TURN_CREDENTIAL}',
-          forceRelay: '${FORCE_RELAY}'
-        };
+      const config = {
+        coordinator: COORDINATOR,
+        viewerToken: VIEWER_TOKEN,
+        viewerId: VIEWER_ID,
+        targetId: TARGET_ID,
+        turnUrl: TURN_URL,
+        turnUsername: TURN_USERNAME,
+        turnCredential: TURN_CREDENTIAL,
+        forceRelay: FORCE_RELAY === '1'
+      };
 
-        console.log('Test environment:', environment);
-
+      const result = await page.evaluate(async (config) => {
         const pc = new RTCPeerConnection({
           iceServers: [],
-          iceTransportPolicy: environment.forceRelay === '1' ? 'relay' : undefined
+          iceTransportPolicy: config.forceRelay ? 'relay' : undefined
         });
 
-        if (environment.turnUrl) {
+        if (config.turnUrl) {
           pc.iceServers.push({
-            urls: environment.turnUrl,
-            username: environment.turnUsername,
-            credential: environment.turnCredential
+            urls: config.turnUrl,
+            username: config.turnUsername,
+            credential: config.turnCredential
           });
         }
+
+        const videoElement = document.createElement('video');
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.autoplay = true;
+        videoElement.style.display = 'none';
+        document.body.appendChild(videoElement);
 
         let frames = 0;
         let candidatePair = {};
         let connectionState = 'new';
         let iceGatheringState = 'new';
+        const iceCandidates = [];
+        const remoteCandidates = [];
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
-            console.log('ICE candidate:', event.candidate.candidateType, event.candidate.candidate);
-          } else {
-            console.log('ICE gathering complete');
+            iceCandidates.push({
+              id: event.candidate.candidate,
+              type: event.candidate.candidateType
+            });
           }
+        };
+
+        pc.onicecandidateerror = (event) => {
+          console.log('ICE candidate error:', event.errorCode, event.errorText);
         };
 
         pc.onicegatheringstatechange = () => {
           iceGatheringState = pc.iceGatheringState;
-          console.log('ICE gathering state:', iceGatheringState);
         };
 
         pc.onconnectionstatechange = () => {
           connectionState = pc.connectionState;
-          console.log('Connection state:', connectionState);
-        };
-
-        pc.oniceconnectionstatechange = () => {
-          console.log('ICE connection state:', pc.iceConnectionState);
         };
 
         pc.ontrack = (track) => {
           console.log('Received track:', track.kind, track.id);
           if (track.kind === 'video') {
-            const videoElement = document.createElement('video');
             videoElement.srcObject = new MediaStream([track]);
-            document.body.appendChild(videoElement);
-            
             videoElement.onloadedmetadata = () => {
               videoElement.play().catch(e => console.log('Play failed:', e));
-            };
-            
-            track.onreceive = (frame) => {
-              if (frame.width && frame.height) {
-                frames++;
-                console.log('Decoded video frame:', frames, frame.width, 'x', frame.height);
-              }
             };
           }
         };
 
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          console.log('Local description set');
-          
-          const iceCandidates = [];
-          const remoteCandidates = [];
-          
-          pc.onicecandidate = (event) => {
-            if (event.candidate) {
-              iceCandidates.push({
-                id: event.candidate.candidate,
-                type: event.candidate.candidateType
-              });
-            }
-          };
-          
-          pc.onicecandidateerror = (event) => {
-            console.log('ICE candidate error:', event.errorCode, event.errorText);
-          };
-          
-          pc.onicegatheringstatechange = () => {
-            if (pc.iceGatheringState === 'complete') {
-              console.log('ICE gathering completed with', iceCandidates.length, 'local candidates');
-            }
-          };
-          
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          if (connectionState !== 'connected') {
-            console.log('Connection not established, status:', connectionState);
-          }
-          
-          const stats = await pc.getStats();
-          const localCandidates = [];
-          
-          stats.forEach(report => {
-            if (report.type === 'local-candidate') {
-              localCandidates.push({
-                id: report.id,
-                type: report.candidateType,
-                priority: report.priority || 0
-              });
-            } else if (report.type === 'remote-candidate') {
-              remoteCandidates.push({
-                id: report.id,
-                type: report.candidateType,
-                priority: report.priority || 0
-              });
-            } else if (report.type === 'candidate-pair') {
-              if (report.state === 'succeeded') {
-                candidatePair = {
-                  local: report.localCandidateId || '',
-                  remote: report.remoteCandidateId || '',
-                  localType: localCandidates.find(c => c.id === report.localCandidateId)?.type || '',
-                  remoteType: remoteCandidates.find(c => c.id === report.remoteCandidateId)?.type || '',
-                  state: report.state
-                };
-                console.log('Selected candidate pair:', candidatePair);
-              }
-            }
-          });
-          
-          console.log('Stats collected: local candidates:', localCandidates.length, 'remote candidates:', remoteCandidates.length);
-          
-          if (frames < 1) {
-            throw new Error('No decoded video frames received');
-          }
-          
-          if (environment.forceRelay === '1') {
-            const selectedLocal = localCandidates.find(c => c.id === candidatePair.local);
-            const selectedRemote = remoteCandidates.find(c => c.id === candidatePair.remote);
-            
-            if (!selectedLocal || selectedLocal.type !== 'relay' || 
-                !selectedRemote || selectedRemote.type !== 'relay') {
-              throw new Error('Forced relay did not select a relay pair: ' + JSON.stringify(candidatePair) + '; local: ' + JSON.stringify(selectedLocal) + '; remote: ' + JSON.stringify(selectedRemote));
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        console.log('Local description set');
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const stats = await pc.getStats();
+        const localCandidates = [];
+        const remoteCandidatesFinal = [];
+
+        const statsReports = stats instanceof Array ? stats : Object.values(stats);
+        for (const report of statsReports) {
+          if (report.type === 'local-candidate') {
+            localCandidates.push({
+              id: report.id,
+              type: report.candidateType,
+              priority: report.priority || 0
+            });
+          } else if (report.type === 'remote-candidate') {
+            remoteCandidatesFinal.push({
+              id: report.id,
+              type: report.candidateType,
+              priority: report.priority || 0
+            });
+          } else if (report.type === 'candidate-pair') {
+            if (report.state === 'succeeded') {
+              candidatePair = {
+                local: report.localCandidateId || '',
+                remote: report.remoteCandidateId || '',
+                localType: localCandidates.find(c => c.id === report.localCandidateId)?.type || '',
+                remoteType: remoteCandidatesFinal.find(c => c.id === report.remoteCandidateId)?.type || '',
+                state: report.state
+              };
+              console.log('Selected candidate pair:', candidatePair);
             }
           }
-          
-          return {
-            decodedFrames: frames,
-            candidatePair: candidatePair,
-            localCandidates: localCandidates,
-            remoteCandidates: remoteCandidates
-          };
-          
-        } catch (error) {
-          console.error('Browser evaluation error:', error);
-          throw error;
         }
-      });
+
+        if (frames < 1) {
+          throw new Error('No decoded video frames received');
+        }
+
+        if (config.forceRelay) {
+          const selectedLocal = localCandidates.find(c => c.id === candidatePair.local);
+          if (!selectedLocal || selectedLocal.type !== 'relay') {
+            throw new Error('Forced relay did not select a relay pair: ' + JSON.stringify(candidatePair));
+          }
+        }
+
+        return {
+          decodedFrames: frames,
+          candidatePair: candidatePair,
+          localCandidates: localCandidates,
+          remoteCandidates: remoteCandidatesFinal
+        };
+      }, config);
 
       const output = {
         decodedFrames: result.decodedFrames,
