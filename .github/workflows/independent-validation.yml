@@ -25,6 +25,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run direct real-media decoded-frame test
         run: sh tests/real-media/run.sh
+      - name: Upload receiver output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-receiver-output
+          path: tests/real-media/receiver-output.txt
+          if-no-files-found: ignore
 
   media-turn:
     runs-on: ubuntu-latest
@@ -39,7 +46,15 @@ jobs:
           TURN_URL=turn:coturn:3478?transport=udp \
           TURN_USERNAME=testuser \
           TURN_CREDENTIAL=testpassword \
-          FORCE_RELAY=1 docker compose --profile turn run --rm receiver
+          FORCE_RELAY=1 docker compose --profile turn run --rm receiver 2>&1 | tee receiver-output.txt
+          echo "=== RECEIVER OUTPUT END ==="
+      - name: Upload receiver output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-turn-receiver-output
+          path: tests/real-media/receiver-output.txt
+          if-no-files-found: ignore
   windows:
     runs-on: windows-latest
     timeout-minutes: 20
