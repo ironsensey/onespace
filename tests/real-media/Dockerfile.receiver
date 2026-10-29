@@ -1,6 +1,5 @@
-FROM node:20-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN npm install playwright@1.64.0 && npx playwright install chromium --with-deps
-COPY receiver.js /receiver.js
-ENTRYPOINT ["sh", "-c"]
-CMD ["sleep 8; exec node /receiver.js"]
+FROM python:3.12-bookworm
+RUN pip install --no-cache-dir aiortc==1.9.0 aiohttp==3.10.11
+COPY receiver.py /receiver.py
+ENTRYPOINT ["python", "/receiver.py"]
+
