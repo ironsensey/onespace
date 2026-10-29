@@ -89,8 +89,18 @@ async def main():
                 for report in stats.values()
                 if report.type == "local-candidate" or report.type == "remote-candidate"
             }
+            selected_pair_id = ""
             for report in stats.values():
-                if report.type == "candidate-pair" and getattr(report, "state", "") == "succeeded":
+                if report.type == "transport":
+                    selected_pair_id = getattr(report, "selectedCandidatePairId", "") or ""
+            for report in stats.values():
+                if (
+                    report.type == "candidate-pair"
+                    and (
+                        report.id == selected_pair_id
+                        or getattr(report, "state", "") == "succeeded"
+                    )
+                ):
                     local = candidates.get(getattr(report, "localCandidateId", ""))
                     remote = candidates.get(getattr(report, "remoteCandidateId", ""))
                     candidate_pair = {
@@ -100,6 +110,8 @@ async def main():
                         "remoteType": getattr(remote, "candidateType", ""),
                         "state": report.state,
                     }
+                    if report.id == selected_pair_id:
+                        break
             if frames < 1:
                 raise RuntimeError("SDP succeeded but no decoded video frame arrived")
             if os.environ.get("FORCE_RELAY") == "1" and (
