@@ -85,6 +85,8 @@ class BrowserDecodedFrameReporter {
         let videoWidth = 0;
         let videoHeight = 0;
         let isPlaying = false;
+        let lastCurrentTime = 0;
+        let frameCountFromCallback = 0;
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
@@ -122,15 +124,27 @@ class BrowserDecodedFrameReporter {
               }).catch(e => console.log('Play failed:', e));
             };
 
+            // Use requestVideoFrameCallback if available, otherwise fallback to time-based counting
             if ('requestVideoFrameCallback' in videoElement) {
-              const countFrames = () => {
+              const countFrames = (now, metadata) => {
                 if (videoElement.readyState >= 2) {
-                  frames++;
-                  console.log('Decoded video frame:', frames, videoWidth, 'x', videoHeight);
+                  frameCountFromCallback++;
+                  console.log('Video frame callback:', frameCountFromCallback, 'currentTime:', videoElement.currentTime);
                 }
                 videoElement.requestVideoFrameCallback(countFrames);
               };
               videoElement.requestVideoFrameCallback(countFrames);
+            } else {
+              // Fallback: count based on currentTime changes
+              const checkFrames = () => {
+                if (videoElement.currentTime > lastCurrentTime && videoElement.readyState >= 2) {
+                  frames++;
+                  lastCurrentTime = videoElement.currentTime;
+                  console.log('Frame detected via time:', frames);
+                }
+                setTimeout(checkFrames, 100);
+              };
+              checkFrames();
             }
           }
         };
@@ -155,7 +169,8 @@ class BrowserDecodedFrameReporter {
         });
 
         if (!sessionResponse.ok) {
-          throw new Error('Failed to create session: ' + sessionResponse.status);
+          const errorText = await sessionResponse.text();
+          throw new Error('Failed to create session: ' + sessionResponse.status + ' ' + errorText);
         }
 
         const sessionData = await sessionResponse.json();
@@ -172,7 +187,8 @@ class BrowserDecodedFrameReporter {
         });
 
         if (!offerResponse.ok) {
-          throw new Error('Failed to send offer: ' + offerResponse.status);
+          const errorText = await offerResponse.text();
+          throw new Error('Failed to send offer: ' + offerResponse.status + ' ' + errorText);
         }
         console.log('Offer sent');
 
@@ -187,7 +203,7 @@ class BrowserDecodedFrameReporter {
             const messages = await pollResponse.json();
             for (const msg of messages) {
               if (msg.type === 'answer') {
-                await pc.setRemoteDescription(new RTCSessionDescription(msg.body, 'answer'));
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: msg.body }));
                 answerReceived = true;
                 console.log('Answer received and set');
                 break;
@@ -202,7 +218,7 @@ class BrowserDecodedFrameReporter {
         }
 
         const frameDeadline = Date.now() + 15000;
-        while (frames < 1 && Date.now() < frameDeadline) {
+        while (frameCountFromCallback < 1 && frames < 1 && Date.now() < frameDeadline) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
@@ -238,6 +254,9 @@ class BrowserDecodedFrameReporter {
           }
         }
 
+        // Use frameCountFromCallback if available, otherwise use frames
+        const totalFrames = frameCountFromCallback > 0 ? frameCountFromCallback : frames;
+
         try {
           await fetch(config.coordinator + '/v1/coord/sessions/' + sessionId + '/close?by=' + config.viewerId, {
             method: 'DELETE',
@@ -247,8 +266,8 @@ class BrowserDecodedFrameReporter {
           console.log('Session close error:', e);
         }
 
-        if (frames < 1) {
-          throw new Error('No decoded video frames received');
+        if (totalFrames < 1) {
+          throw new Error('No decoded video frames received (counted: ' + totalFrames + ')');
         }
 
         if (videoWidth <= 0 || videoHeight <= 0) {
@@ -267,7 +286,7 @@ class BrowserDecodedFrameReporter {
         }
 
         return {
-          decodedFrames: frames,
+          decodedFrames: totalFrames,
           candidatePair: candidatePair,
           videoWidth: videoWidth,
           videoHeight: videoHeight,
