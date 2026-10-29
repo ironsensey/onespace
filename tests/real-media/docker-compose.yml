@@ -48,6 +48,10 @@ services:
     network_mode: host
     command: ["--coordinator", "https://127.0.0.1:47604", "--token", "pi-test-token", "--device", "pi", "--upstream", "http://127.0.0.1:8889/camera/whep"]
 
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile.receiver
     depends_on: [coordinator, bridge, publisher]
     entrypoint: ["node", "/app/receiver.js"]
     environment:
