@@ -40,6 +40,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run forced TURN decoded-frame test
         run: sh tests/real-media/run-turn.sh
+      - name: Upload run-turn logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-turn-logs
+          path: tests/real-media/*.txt
+          if-no-files-found: ignore
       - name: Upload receiver output
         if: always()
         uses: actions/upload-artifact@v4
