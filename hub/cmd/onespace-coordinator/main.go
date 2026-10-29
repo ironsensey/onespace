@@ -28,7 +28,7 @@ func run(args []string) error {
 	cert := flags.String("cert", "", "TLS certificate PEM path")
 	key := flags.String("key", "", "TLS private key PEM path")
 	devices := flags.String("devices", "", "owner-only JSON file containing device token hashes")
-	allowedOrigins := flags.String("allowed-origins", "", "Comma-separated list of allowed CORS origins (empty = none)")
+	allowedOrigins := flags.String("allowed-origins", "", "Comma-separated list of allowed CORS origins (empty = none, * = all)")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -48,6 +48,7 @@ func run(args []string) error {
 	}
 	defer broker.Close()
 
+	allowAll := *allowedOrigins == "*"
 	allowedOriginSet := make(map[string]bool)
 	for _, origin := range strings.Split(*allowedOrigins, ",") {
 		origin = strings.TrimSpace(origin)
@@ -58,9 +59,13 @@ func run(args []string) error {
 
 	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		allowed := allowedOriginSet[origin]
-		if origin != "" && allowed {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+		allowed := allowAll || allowedOriginSet[origin] || origin == ""
+		if origin != "" && (allowAll || allowedOriginSet[origin]) {
+			if allowAll {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.Header().Set("Access-Control-Max-Age", "86400")
