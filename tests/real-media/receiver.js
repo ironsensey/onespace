@@ -170,7 +170,6 @@ class BrowserDecodedFrameReporter {
           
           const stats = await pc.getStats();
           const localCandidates = [];
-          const remoteCandidates = [];
           
           stats.forEach(report => {
             if (report.type === 'local-candidate') {
