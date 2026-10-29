@@ -71,4 +71,3 @@ func run(args []string) error {
 	}
 	return server.ListenAndServeTLS(*cert, *key)
 }
-EOF
