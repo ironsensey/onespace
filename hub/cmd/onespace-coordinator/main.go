@@ -45,9 +45,23 @@ func run(args []string) error {
 		return err
 	}
 	defer broker.Close()
+
+	// CORS middleware for browser-based signaling
+	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		mux.ServeHTTP(w, r)
+	})
+
 	server := &http.Server{
 		Addr:              *listen,
-		Handler:           mux,
+		Handler:           corsHandler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       65 * time.Second,
 		WriteTimeout:      65 * time.Second,
@@ -57,3 +71,4 @@ func run(args []string) error {
 	}
 	return server.ListenAndServeTLS(*cert, *key)
 }
+EOF
