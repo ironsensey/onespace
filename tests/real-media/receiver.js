@@ -20,7 +20,13 @@ const { chromium } = require("playwright");
   // run in the page, so the peer connection is bridged via window.__onespacePc.
   const browser = await chromium.launch({
     headless: true,
-    args: ["--ignore-certificate-errors", "--no-sandbox", "--disable-setuid-sandbox"],
+    args: [
+      "--ignore-certificate-errors",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+    ],
   });
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   const page = await context.newPage();

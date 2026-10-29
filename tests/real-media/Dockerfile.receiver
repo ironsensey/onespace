@@ -1,6 +1,6 @@
 FROM node:20-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-RUN npm install playwright@1.48.0 && npx playwright install chromium --with-deps
+RUN npm install playwright@1.64.0 && npx playwright install chromium --with-deps
 COPY receiver.js /receiver.js
 ENTRYPOINT ["sh", "-c"]
 CMD ["sleep 8; exec node /receiver.js"]
