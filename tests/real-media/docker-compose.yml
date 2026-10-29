@@ -1,7 +1,7 @@
 services:
   mediamtx:
     image: bluenviron/mediamtx:1.21.2
-    command: ["/mediamtx", "/config/mediamtx.yml"]
+    command: ["--config", "/config/mediamtx.yml"]
     volumes:
       - ./mediamtx.yml:/config/mediamtx.yml:ro
     ports: ["8889:8889", "8189:8189/udp"]
