@@ -19,6 +19,12 @@ services:
       - libx264
       - -tune
       - zerolatency
+      - -g
+      - "10"
+      - -bf
+      - "0"
+      - -x264-params
+      - repeat-headers=1
       - -pix_fmt
       - yuv420p
       - -f
