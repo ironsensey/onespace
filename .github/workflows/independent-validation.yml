@@ -25,6 +25,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run direct real-media decoded-frame test
         run: sh tests/real-media/run.sh
+
+  media-turn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
       - name: Run forced TURN decoded-frame test
         working-directory: tests/real-media
         run: |
