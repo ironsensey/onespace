@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"onespace.local/hub/coordination"
@@ -27,11 +28,12 @@ func run(args []string) error {
 	cert := flags.String("cert", "", "TLS certificate PEM path")
 	key := flags.String("key", "", "TLS private key PEM path")
 	devices := flags.String("devices", "", "owner-only JSON file containing device token hashes")
+	allowedOrigins := flags.String("allowed-origins", "*", "Comma-separated list of allowed CORS origins (* = all)")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
 	if flags.NArg() != 0 || *cert == "" || *key == "" || *devices == "" {
-		return errors.New("usage: onespace-coordinator serve --listen ADDRESS --cert CERT --key KEY --devices HASHES")
+		return errors.New("usage: onespace-coordinator serve --listen ADDRESS --cert CERT --key KEY --devices HASHES [--allowed-origins ORIGINS]")
 	}
 	authorizer, err := coordination.LoadTokenAuthorizer(*devices)
 	if err != nil {
@@ -46,13 +48,40 @@ func run(args []string) error {
 	}
 	defer broker.Close()
 
-	// CORS middleware for browser-based signaling
+	// WireGuard enrollment endpoints
+	wgEnrollment := coordination.NewWireGuardEnrollment()
+	mux.HandleFunc("/v1/wg/enroll", wgEnrollment.EnrollHandler)
+	mux.HandleFunc("/v1/wg/revoke", wgEnrollment.RevokeHandler)
+	mux.HandleFunc("/v1/wg/endpoint", wgEnrollment.EndpointHandler)
+
+	allowAll := *allowedOrigins == "*"
+	allowedOriginSet := make(map[string]bool)
+	for _, origin := range strings.Split(*allowedOrigins, ",") {
+		origin = strings.TrimSpace(origin)
+		if origin != "" && origin != "*" {
+			allowedOriginSet[origin] = true
+		}
+	}
+
 	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		w.Header().Set("Access-Control-Max-Age", "86400")
+		origin := r.Header.Get("Origin")
+		allowed := allowAll || allowedOriginSet[origin] || origin == ""
+		if origin != "" && allowed {
+			if allowAll {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
+			}
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+		}
 		if r.Method == http.MethodOptions {
+			if origin != "" && !allowed {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}

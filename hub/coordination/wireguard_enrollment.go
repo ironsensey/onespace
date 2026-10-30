@@ -15,6 +15,7 @@ type WireGuardPeer struct {
 	PublicKey  string `json:"public_key"`
 	AssignedIP string `json:"assigned_ip"`
 	AllowedIPs []string `json:"allowed_ips"`
+	Endpoint   string `json:"endpoint,omitempty"`
 	Revoked    bool   `json:"revoked"`
 }
 
@@ -178,4 +179,81 @@ func (e *WireGuardEnrollment) RevokeHandler(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "revoked"})
+}
+// RegisterEndpoint registers or updates a peer's network endpoint.
+func (e *WireGuardEnrollment) RegisterEndpoint(deviceID, endpoint string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	peer, exists := e.peers[deviceID]
+	if !exists {
+		return fmt.Errorf("device not enrolled: %s", deviceID)
+	}
+	if peer.Revoked {
+		return fmt.Errorf("device revoked: %s", deviceID)
+	}
+	peer.Endpoint = endpoint
+	return nil
+}
+
+// GetEndpoint returns a peer's endpoint by public key.
+func (e *WireGuardEnrollment) GetEndpoint(publicKey string) (string, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	deviceID, exists := e.byKey[publicKey]
+	if !exists {
+		return "", false
+	}
+	peer, exists := e.peers[deviceID]
+	if !exists {
+		return "", false
+	}
+	if peer.Revoked {
+		return "", false
+	}
+	return peer.Endpoint, true
+}
+
+// EndpointHandler handles HTTP endpoint registration and lookup.
+func (e *WireGuardEnrollment) EndpointHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		var req struct {
+			DeviceID  string `json:"device_id"`
+			Endpoint  string `json:"endpoint"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid request"})
+			return
+		}
+		if err := e.RegisterEndpoint(req.DeviceID, req.Endpoint); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		publicKey := r.URL.Query().Get("public_key")
+		if publicKey == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "public_key required"})
+			return
+		}
+		endpoint, ok := e.GetEndpoint(publicKey)
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "peer not found or not revoked"})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"endpoint": endpoint})
+		return
+	}
+
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
