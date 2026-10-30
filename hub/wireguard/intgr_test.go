@@ -15,6 +15,8 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -114,6 +116,14 @@ func TestWireGuardEndToEnd(t *testing.T) {
 	// Wait for server to be ready
 	time.Sleep(1 * time.Second)
 
+	// Capture peer2 rx bytes before traffic
+	ipc2Before, err := dev2.IpcGet()
+	if err != nil {
+		t.Fatalf("get peer2 stats: %v", err)
+	}
+	rxBefore := parseRxBytes(ipc2Before, kp1.PublicKey)
+	t.Logf("peer2 rx bytes before traffic: %d", rxBefore)
+
 	// Make HTTPS request from peer 1 through tunnel
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -146,16 +156,37 @@ func TestWireGuardEndToEnd(t *testing.T) {
 	}
 	t.Log("HTTPS request through WireGuard tunnel succeeded")
 
-	// Revoke peer 1 from peer 2's device
-	if err := dev2.IpcSet("public_key=" + kp1.PublicKey + "\n"); err != nil {
+	// Verify peer2 received bytes increased (traffic went through tunnel)
+	ipc2After, err := dev2.IpcGet()
+	if err != nil {
+		t.Fatalf("get peer2 stats after: %v", err)
+	}
+	rxAfter := parseRxBytes(ipc2After, kp1.PublicKey)
+	t.Logf("peer2 rx bytes after traffic: %d", rxAfter)
+	if rxAfter <= rxBefore {
+		t.Errorf("peer2 rx bytes did not increase: before=%d after=%d", rxBefore, rxAfter)
+	}
+
+	// Revoke peer 1 from peer 2's device using remove=true
+	if err := dev2.IpcSet("public_key=" + kp1.PublicKey + "\nremove=true\n"); err != nil {
 		t.Fatalf("revoke peer1 from peer2: %v", err)
 	}
-	t.Log("peer1 revoked from peer2")
+	t.Log("peer1 revoked from peer2 via remove=true")
 
 	// Wait for revocation to take effect
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
-	// Verify request fails after revocation
+	// Verify peer1 no longer in peer2's peer list
+	ipc2AfterRevoke, err := dev2.IpcGet()
+	if err != nil {
+		t.Fatalf("get peer2 stats after revoke: %v", err)
+	}
+	if strings.Contains(ipc2AfterRevoke, "public_key="+kp1.PublicKey) {
+		t.Error("peer1 still present in peer2 after revocation")
+	}
+	t.Log("peer1 removed from peer2 peer list")
+
+	// Verify request fails after revocation using a FRESH connection
 	resp2, err := client.Do(req)
 	if err == nil {
 		resp2.Body.Close()
@@ -192,4 +223,24 @@ func generateTestCert() (*tls.Certificate, error) {
 		return nil, err
 	}
 	return &cert, nil
+}
+
+// parseRxBytes extracts received bytes for a peer from IPC get output.
+func parseRxBytes(ipcOutput string, publicKey string) int64 {
+	lines := strings.Split(ipcOutput, "\n")
+	inPeer := false
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "public_key=") {
+			inPeer = strings.TrimPrefix(line, "public_key=") == publicKey
+			continue
+		}
+		if inPeer && strings.HasPrefix(line, "rx_bytes:") {
+			val, err := strconv.ParseInt(strings.TrimPrefix(line, "rx_bytes:"), 10, 64)
+			if err == nil {
+				return val
+			}
+		}
+	}
+	return 0
 }
