@@ -1,0 +1,139 @@
+ONE SPACE DIAGNOSTIC - SOURCE CODE ANALYSIS
+=========================================
+
+Repository: C:/Users/harip/OneSpace/hub/wireguard/
+Analysis Date: 2026-10-31
+
+FILES ANALYZED:
+
+1. hub/wireguard/cmd/wgtest/main.go (336 lines)
+   - Package: main
+   - Purpose: WireGuard integration test with HTTPS client/server
+   - Key Features:
+     * Key generation/loading from files (hex/base64 formats)
+     * WireGuard tunnel creation (MTU: 1420, Name: "wg-test")
+     * Client/Server mode operation
+     * Certificate-based HTTPS authentication
+     * Peer configuration and management
+   - Command Line Flags:
+     -mode, -peer-key, -peer-ip, -peer-port, -listen-port
+     -overlay-ip, -peer-overlay-ip, -revoke, -revoke-key
+     -key-file, -enroll-timeout, -ca-cert
+   - Functions:
+     * LoadCACertificate(): Validates CA certificates, returns fingerprint
+     * run(): Main entry point, parses flags, creates tunnel
+     * generateTestCert(): Self-signed test certificate (RSA 2048, "test-receiver")
+     * configureInterfaceIP(): Linux-only IP configuration via ip commands
+     * runServer(): HTTPS server on overlay IP:8443 with TLS cert
+     * runClient(): HTTPS client with certificate validation
+   - Dependencies:
+     * crypto packages (rsa, x509, tls)
+     * net/http for HTTPS server/client
+     * golang.zx2c4.com/wireguard packages
+
+2. hub/wireguard/cmd/wgtest/certloader_test.go (207 lines)
+   - Package: main
+   - Purpose: Unit tests for LoadCACertificate function
+   - Test Coverage:
+     * Valid certificate test
+     * Missing file error test
+     * Empty file error test
+     * Malformed PEM error test
+     * Invalid certificate type error test
+     * File permission error test
+     * Fingerprint consistency test
+   - Validates certificate loading and fingerprint generation
+
+3. hub/wireguard/keys.go (66 lines)
+   - Package: wireguard
+   - Purpose: WireGuard key management
+   - KeyPair struct:
+     * PrivateKey (hex)
+     * PublicKey (hex) 
+     * Base64PrivateKey
+     * Base64PublicKey
+   - Functions:
+     * GenerateKeyPair(): Creates new X25519 key pairs
+     * LoadKeyPair(): Loads hex-encoded private key
+     * Base64Encode(): Helper utility
+
+4. hub/wireguard/tunnel.go (112 lines)
+   - Package: wireguard
+   - Purpose: WireGuard tunnel abstraction
+   - Tunnel struct:
+     * Device (wireguard device)
+     * TUN (TUN device)
+     * Bind (network bind)
+     * Logger
+     * Name
+   - Functions:
+     * NewTunnel(): Creates new tunnel with specified config
+     * Configure(): Applies WireGuard configuration via IPC
+     * Close(): Cleanup
+     * GetStats(): Retrieves transfer statistics
+
+5. hub/wireguard/wireguard.go (150 lines)
+   - Package: wireguard
+   - Purpose: High-level WireGuard operations
+   - Config struct:
+     * PrivateKey, Address, ListenPort, Peers, MTU, DNS
+   - Functions:
+     * NewPeer(): Peer discovery via coordinator endpoint
+     * AllocateAddress(): IP address allocation from subnet
+     * ConnectionMode enum (LAN, Direct, Relay, Offline, CoordinatorRelay)
+
+6. hub/wireguard/integration_test.go (83 lines)
+   - Package: wireguard (build tag: integration)
+   - Purpose: Integration test for basic WireGuard handshake
+
+7. hub/wireguard/intgr_test.go (246 lines)
+   - Package: wireguard (build tag: integration)
+   - Purpose: Full end-to-end WireGuard test with HTTPS
+   - TestWireGuardEndToEnd():
+     * Creates two WireGuard peers
+     * Performs handshake and configures peers
+     * Starts HTTPS server with test certificate
+     * Makes HTTPS request through tunnel
+     * Verifies traffic increases
+     * Tests revocation functionality
+
+DEPENDENCY ANALYSIS:
+- Core: golang.zx2c4.com/wireguard/* packages
+- Crypto: crypto, crypto/x509, crypto/tls, crypto/rsa
+- Networking: net, net/http, encoding/pem
+- Testing: testing, time
+
+BUILD CONFIGURATION:
+- Go version: 1.23.0 (windows), Not specified (Pi)
+- No go.mod files found in hub/wireguard/
+- Integration tests require "go:build integration" tag
+- Windows binaries compiled: Unknown
+
+CODE QUALITY:
+- Consistent error handling with fmt.Errorf()
+- Clear separation of concerns
+- Comprehensive test coverage
+- Proper resource cleanup (defer statements)
+- No obvious security issues (certificate validation present)
+
+CERTIFICATE ANALYSIS:
+- Test certificates generated for "test-receiver" common name
+- IP validation: 10.200.200.2 (Pi's overlay IP)
+- RSA 2048-bit key pairs
+- 1-hour validity period
+- Self-signed by design for testing
+
+STATE VERIFICATION:
+- Source code: Complete and well-structured
+- Dependencies: Standard and well-established libraries
+- Build readiness: Requires compilation on target platforms
+- Security posture: Good for testing environment
+
+RECOMMENDATIONS:
+1. Compile and test on target platforms
+2. Verify wireguard-go installation
+3. Check for certificate trust chain setup
+4. Validate network configuration (ports 51820, 8443)
+5. Review WireGuard interface permissions
+
+Finding: Source code complete but WireGuard testing infrastructure not running

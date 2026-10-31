@@ -1,83 +1,125 @@
-//go:build integration
+//go:build integration && linux
 
 package wireguard
 
 import (
-	"net"
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
-
-	"golang.zx2c4.com/wireguard/device"
 )
 
-func TestWireGuardHandshake(t *testing.T) {
-	kp1, err := GenerateKeyPair()
+// Explicit opt-in root test. Two network namespaces prevent local-route bypass
+// between the peers. Missing prerequisites FAIL rather than masquerading as proof.
+func TestWireGuardHTTPSAndRevocation(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Fatal("requires root for disposable network namespaces")
+	}
+	binary := os.Getenv("ONESPACE_WGTEST_BINARY")
+	if binary == "" {
+		t.Fatal("set ONESPACE_WGTEST_BINARY to the built native wgtest")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	run := func(args ...string) string {
+		t.Helper()
+		out, err := exec.CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
+		if err != nil {
+			t.Fatalf("%s: %v: %s", args[0], err, out)
+		}
+		return string(out)
+	}
+	nsA := fmt.Sprintf("oswg-a-%d", os.Getpid())
+	nsB := fmt.Sprintf("oswg-b-%d", os.Getpid())
+	for _, ns := range []string{nsA, nsB} {
+		run("ip", "netns", "add", ns)
+		t.Cleanup(func() {
+			if out, err := exec.Command("ip", "netns", "delete", ns).CombinedOutput(); err != nil {
+				t.Errorf("namespace cleanup: %v: %s", err, out)
+			}
+		})
+		run("ip", "-n", ns, "link", "set", "lo", "up")
+	}
+	run("ip", "-n", nsA, "link", "add", "transport", "type", "veth", "peer", "name", "transport", "netns", nsB)
+	run("ip", "-n", nsA, "addr", "add", "192.0.2.1/30", "dev", "transport")
+	run("ip", "-n", nsB, "addr", "add", "192.0.2.2/30", "dev", "transport")
+	run("ip", "-n", nsA, "link", "set", "transport", "up")
+	run("ip", "-n", nsB, "link", "set", "transport", "up")
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.key")
+	b := filepath.Join(dir, "b.key")
+	cert := filepath.Join(dir, "server.pem")
+	tlsKey := filepath.Join(dir, "tls.key")
+	revoke := filepath.Join(dir, "revoke")
+	public := func(output string) string {
+		t.Helper()
+		for _, line := range strings.Split(output, "\n") {
+			if strings.HasPrefix(line, "PUBLIC_KEY=") {
+				return strings.TrimPrefix(line, "PUBLIC_KEY=")
+			}
+		}
+		t.Fatal("no public key")
+		return ""
+	}
+	aPub := public(run(binary, "-mode", "init-client", "-key-file", a))
+	bPub := public(run(binary, "-mode", "init-server", "-key-file", b, "-cert-file", cert, "-tls-key-file", tlsKey))
+	logPath := filepath.Join(dir, "server.log")
+	log, err := os.Create(logPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	kp2, err := GenerateKeyPair()
-	if err != nil {
+	defer log.Close()
+	server := exec.CommandContext(ctx, "ip", "netns", "exec", nsB, binary, "-mode", "server", "-key-file", b, "-cert-file", cert, "-tls-key-file", tlsKey, "-overlay-ip", "10.200.200.2/32", "-peer-overlay-ip", "10.200.200.1", "-peer-ip", "192.0.2.1", "-peer-key", aPub, "-revoke-file", revoke, "-duration", "55s")
+	server.Stdout = log
+	server.Stderr = log
+	if err = server.Start(); err != nil {
 		t.Fatal(err)
 	}
-
-	tun1, err := NewTunnel(TunnelConfig{Name: "wg-test1", MTU: 1420, LogLevel: device.LogLevelSilent})
-	if err != nil {
-		t.Skipf("cannot create TUN: %v", err)
+	defer func() { server.Process.Signal(os.Interrupt); server.Wait() }()
+	waitLog := func(needle string) {
+		t.Helper()
+		timer := time.NewTimer(8 * time.Second)
+		defer timer.Stop()
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			data, err := os.ReadFile(logPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(data), needle) {
+				return
+			}
+			select {
+			case <-timer.C:
+				t.Fatalf("missing %s: %s", needle, data)
+			case <-ticker.C:
+			}
+		}
 	}
-	defer tun1.Close()
-
-	tun2, err := NewTunnel(TunnelConfig{Name: "wg-test2", MTU: 1420, LogLevel: device.LogLevelSilent})
-	if err != nil {
-		t.Skipf("cannot create TUN: %v", err)
+	waitLog("HTTPS_LISTENING=")
+	args := []string{"netns", "exec", nsA, binary, "-mode", "client", "-key-file", a, "-ca-cert", cert, "-overlay-ip", "10.200.200.1/32", "-peer-overlay-ip", "10.200.200.2", "-peer-ip", "192.0.2.2", "-peer-key", bPub, "-enroll-timeout", "3s"}
+	output := run(append([]string{"ip"}, args...)...)
+	if !strings.Contains(output, "tls_verified=true") {
+		t.Fatal("no verified HTTPS", output)
 	}
-	defer tun2.Close()
-
-	cfg1 := Config{
-		PrivateKey: kp1.PrivateKey,
-		Address:    "10.200.200.1/24",
-		ListenPort: 51821,
-		Peers: []Peer{
-			{
-				PublicKey:           kp2.PublicKey,
-				Endpoint:            "127.0.0.1:51822",
-				AllowedIPs:          []string{"10.200.200.2/32"},
-				PersistentKeepalive: 1,
-			},
-		},
+	t.Log(output)
+	if err = os.WriteFile(revoke, []byte("revoke test peer\n"), 0600); err != nil {
+		t.Fatal(err)
 	}
-	if err := tun1.Configure(cfg1); err != nil {
-		t.Fatalf("configure tun1: %v", err)
+	waitLog("PEER_REVOKED=")
+	outputBytes, err := exec.CommandContext(ctx, "ip", args...).CombinedOutput()
+	if err == nil || !strings.Contains(string(outputBytes), "REQUEST_FAILED") {
+		t.Fatalf("fresh revoked connection did not fail: %v %s", err, outputBytes)
 	}
-
-	cfg2 := Config{
-		PrivateKey: kp2.PrivateKey,
-		Address:    "10.200.200.2/24",
-		ListenPort: 51822,
-		Peers: []Peer{
-			{
-				PublicKey:           kp1.PublicKey,
-				Endpoint:            "127.0.0.1:51821",
-				AllowedIPs:          []string{"10.200.200.1/32"},
-				PersistentKeepalive: 1,
-			},
-		},
+	// Check the very same server remains reachable from its own namespace, with TLS validation.
+	health := run("ip", "netns", "exec", nsB, "curl", "--noproxy", "*", "--fail", "--silent", "--show-error", "--max-time", "3", "--cacert", cert, "https://10.200.200.2:8443/")
+	if health != "ok" {
+		t.Fatal("server unhealthy after revocation", health)
 	}
-	if err := tun2.Configure(cfg2); err != nil {
-		t.Fatalf("configure tun2: %v", err)
-	}
-
-	time.Sleep(3 * time.Second)
-
-	// Try to connect to overlay IP
-	conn, err := net.DialTimeout("tcp", "10.200.200.2:80", 5*time.Second)
-	if err != nil {
-		t.Logf("TCP connectivity: %v (expected without listener)", err)
-	} else {
-		conn.Close()
-		t.Log("TCP connectivity established")
-	}
-
-	t.Log("Handshake test completed")
+	t.Log("fresh revoked connection failed; same HTTPS server still returns verified ok")
 }
-
-

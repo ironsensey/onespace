@@ -1,112 +1,148 @@
 package wireguard
 
 import (
+	"context"
 	"fmt"
-	"time"
-
 	"golang.zx2c4.com/wireguard/conn"
 	"golang.zx2c4.com/wireguard/device"
 	"golang.zx2c4.com/wireguard/tun"
+	"net"
+	"net/netip"
+	"strings"
+	"sync"
 )
 
-// Tunnel wraps a WireGuard device with its TUN interface.
 type Tunnel struct {
-	Device  *device.Device
-	TUN     tun.Device
-	Bind    conn.Bind
-	Logger  *device.Logger
-	Name    string
+	Device    *device.Device
+	TUN       tun.Device
+	Bind      conn.Bind
+	Logger    *device.Logger
+	Name      string
+	closeOnce sync.Once
 }
-
-// TunnelConfig holds configuration for creating a tunnel.
 type TunnelConfig struct {
 	Name     string
 	MTU      int
 	LogLevel int
 }
 
-// NewTunnel creates a new WireGuard tunnel with a TUN device.
 func NewTunnel(cfg TunnelConfig) (*Tunnel, error) {
 	if cfg.MTU == 0 {
 		cfg.MTU = 1420
 	}
 	if cfg.Name == "" {
-		cfg.Name = "wg0"
+		cfg.Name = "wg-test"
 	}
-
-	tunDev, err := tun.CreateTUN(cfg.Name, cfg.MTU)
+	if _, err := net.InterfaceByName(cfg.Name); err == nil {
+		return nil, fmt.Errorf("interface %s already exists; refusing to reuse it", cfg.Name)
+	}
+	td, err := tun.CreateTUN(cfg.Name, cfg.MTU)
 	if err != nil {
 		return nil, fmt.Errorf("create TUN: %w", err)
 	}
-
+	name, err := td.Name()
+	if err != nil {
+		td.Close()
+		return nil, fmt.Errorf("TUN identity: %w", err)
+	}
 	bind := conn.NewDefaultBind()
 	logger := device.NewLogger(cfg.LogLevel, "[wireguard]")
-
-	dev := device.NewDevice(tunDev, bind, logger)
-
-	t := &Tunnel{
-		Device: dev,
-		TUN:    tunDev,
-		Bind:   bind,
-		Logger: logger,
-		Name:   cfg.Name,
-	}
-
-	return t, nil
+	return &Tunnel{Device: device.NewDevice(td, bind, logger), TUN: td, Bind: bind, Logger: logger, Name: name}, nil
 }
 
-// Configure applies a WireGuard configuration to the tunnel.
-func (t *Tunnel) Configure(cfg Config) error {
-	uapi := fmt.Sprintf("private_key=%s\n", cfg.PrivateKey)
-	if cfg.ListenPort > 0 {
-		uapi += fmt.Sprintf("listen_port=%d\n", cfg.ListenPort)
+func buildIPC(cfg Config) (string, error) {
+	kp, err := LoadKeyPair(cfg.PrivateKey)
+	if err != nil {
+		return "", fmt.Errorf("invalid private key: %w", err)
 	}
-
-	for _, peer := range cfg.Peers {
-		uapi += fmt.Sprintf("public_key=%s\n", peer.PublicKey)
-		if peer.Endpoint != "" {
-			uapi += fmt.Sprintf("endpoint=%s\n", peer.Endpoint)
+	if cfg.ListenPort < 0 || cfg.ListenPort > 65535 {
+		return "", fmt.Errorf("invalid listen port")
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "private_key=%s\nlisten_port=%d\n", kp.PrivateKey, cfg.ListenPort)
+	for _, p := range cfg.Peers {
+		pub, err := NormalizePublicKey(p.PublicKey)
+		if err != nil {
+			return "", err
 		}
-		if len(peer.AllowedIPs) > 0 {
-			for _, ip := range peer.AllowedIPs {
-				uapi += fmt.Sprintf("allowed_ip=%s\n", ip)
+		fmt.Fprintf(&b, "public_key=%s\nreplace_allowed_ips=true\n", pub)
+		if p.Endpoint != "" {
+			if _, err := netip.ParseAddrPort(p.Endpoint); err != nil {
+				return "", fmt.Errorf("peer endpoint must be an IP:port")
 			}
+			fmt.Fprintf(&b, "endpoint=%s\n", p.Endpoint)
 		}
-		if peer.PersistentKeepalive > 0 {
-			uapi += fmt.Sprintf("persistent_keepalive_interval=%d\n", peer.PersistentKeepalive)
+		for _, ip := range p.AllowedIPs {
+			prefix, err := netip.ParsePrefix(ip)
+			if err != nil {
+				return "", fmt.Errorf("invalid allowed prefix")
+			}
+			fmt.Fprintf(&b, "allowed_ip=%s\n", prefix.Masked())
 		}
+		if p.PersistentKeepalive < 0 || p.PersistentKeepalive > 65535 {
+			return "", fmt.Errorf("invalid keepalive")
+		}
+		fmt.Fprintf(&b, "persistent_keepalive_interval=%d\n", p.PersistentKeepalive)
 	}
-
-	if err := t.Device.IpcSet(uapi); err != nil {
+	return b.String(), nil
+}
+func (t *Tunnel) Configure(cfg Config) error {
+	ipc, err := buildIPC(cfg)
+	if err != nil {
+		return err
+	}
+	if err = t.Device.IpcSet(ipc); err != nil {
 		return fmt.Errorf("configure device: %w", err)
 	}
-
-	// Bring interface up
-	if err := t.Device.Up(); err != nil {
+	if err = t.Device.Up(); err != nil {
 		return fmt.Errorf("bring up: %w", err)
 	}
-
 	return nil
 }
 
-// Close shuts down the tunnel.
-func (t *Tunnel) Close() {
-	if t.Device != nil {
-		t.Device.Close()
+// ConfigureNetwork configures only this newly-created adapter and explicit peer routes.
+func (t *Tunnel) ConfigureNetwork(ctx context.Context, address string, routes []string) error {
+	prefix, err := netip.ParsePrefix(address)
+	if err != nil || !prefix.Addr().Is4() {
+		return fmt.Errorf("an IPv4 interface prefix is required")
 	}
-	if t.Bind != nil {
-		t.Bind.Close()
+	for _, route := range routes {
+		p, err := netip.ParsePrefix(route)
+		if err != nil || !p.Addr().Is4() || p.Bits() != 32 {
+			return fmt.Errorf("test routes must be IPv4 /32 host routes")
+		}
 	}
+	return configureNetwork(ctx, t, prefix, routes)
 }
-
-// GetStats returns transfer statistics.
-func (t *Tunnel) GetStats() (uint64, uint64, error) {
-	stats, err := t.Device.IpcGet()
+func (t *Tunnel) RemovePeer(key string) error {
+	pub, err := NormalizePublicKey(key)
+	if err != nil {
+		return err
+	}
+	return t.Device.IpcSet("public_key=" + pub + "\nremove=true\n")
+}
+func (t *Tunnel) Close() {
+	t.closeOnce.Do(func() {
+		if t.Device != nil {
+			t.Device.Close()
+		}
+	})
+}
+func (t *Tunnel) PeerStats() ([]PeerStats, error) {
+	raw, err := t.Device.IpcGet()
+	if err != nil {
+		return nil, err
+	}
+	return ParsePeerStats(raw)
+}
+func (t *Tunnel) GetStats() (rx, tx uint64, err error) {
+	peers, err := t.PeerStats()
 	if err != nil {
 		return 0, 0, err
 	}
-	// Parse stats from IPC output
-	_ = stats
-	_ = time.Second
-	return 0, 0, nil
+	for _, p := range peers {
+		rx += p.RxBytes
+		tx += p.TxBytes
+	}
+	return rx, tx, nil
 }

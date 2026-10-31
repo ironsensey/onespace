@@ -2039,3 +2039,56 @@ APPENDIX J — GIT STATE AT HANDOVER
 7d7a1fa Integrate native Windows controls and end-to-end PC connectivity through Pi
 0fe4364 Add native Windows dashboard preview and verified Android route selection
 3343572 Add OneSpace v0.8.0 Drive recording preview for testing
+====================================================================
+ADDENDUM: CI VALIDATION UPDATE (29 October 2026)
+====================================================================
+
+PASSING CI RUN: 40911155266 (commit 21cf35f)
+Branch: dev/onespace-independent-connect
+Repository: https://github.com/ironsensey/onespace
+
+Job Results (all 5 passed):
+- linux-camera: SUCCESS
+- security: SUCCESS
+- windows: SUCCESS
+- media (direct real-media): SUCCESS
+- media-turn (forced TURN): SUCCESS
+
+Synthetic Video vs Physical Pi Playback:
+- CI media test uses synthetic H.264 from MediaMTX (not physical Pi camera).
+- The real-media fixture (tests/real-media) validates WebRTC negotiation, ICE candidate selection, and forced-relay mode using synthetic video.
+- Physical Pi camera playback has NOT been verified in CI; Pi is on LAN only (192.168.0.106).
+- Pi has no global IPv6 address (only link-local fe80::). No public endpoint exists.
+- Different-network camera access remains UNVERIFIED.
+
+CORS Review:
+- Coordinator now supports --allowed-origins flag (default * for test fixture).
+- Explicit origin allowlist enforced when specific origins provided.
+- Authentication (Bearer token) and authorization (AllowCamera) retained on all endpoints.
+- Disallowed origins receive 403 on preflight OPTIONS.
+- CORS is NOT authentication; auth tokens still required for all API calls.
+
+Hosting Proposal (pending approval):
+- Need: reachable public host for Go coordinator + coturn.
+- Oracle Cloud Always Free (ARM VM, 4 OCPUs, 24GB RAM) - requires credit card for signup but no charge for Always Free resources.
+- Alternative: donated host or existing server with public IP.
+- No paid service, mandatory VPN, or deployment without approval.
+
+Physical Pi Acceptance Tests (prepared, not yet executed):
+- Preserve: beststream.sh (GStreamer H.264 to MediaMTX RTSP), fast_live.py (MJPEG port 8081), onespace-hub service.
+- Read-only inspection completed: Pi 3B, 856MB RAM, camera at /dev/video0, GStreamer 1.28.7, MediaMTX v1.21.2.
+- Throttled: 0x50005 (under-voltage detected). Recommend power supply check before streaming.
+- Tests require: Pi on LAN, Windows/Android on different network, coordinator/coturn on reachable host.
+- Ask before starting/stopping Pi processes or changing persistent configuration.
+
+Remaining Blockers:
+1. No public endpoint for coordinator/coturn (infrastructure blocker, not software bug).
+2. Pi under-voltage (0x50005) - may affect streaming stability.
+3. Physical camera acceptance tests not yet executed (require approved public host).
+4. Different-network camera access NOT verified - do not claim working.
+
+WireGuard Connectivity Package (29 October 2026):
+- Added hub/wireguard/ package: key generation (crypto/ecdh X25519), config rendering, address allocation.
+- Tests: 4/4 pass (TestGenerateKeyPair, TestRenderConfig, TestAllocateAddress, TestConnectionModeString).
+- CI run 40927002861: all 5 jobs pass with new package.
+- Status: IMPLEMENTED (fixture-tested). Physical device and Internet testing pending.

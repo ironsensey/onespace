@@ -11,11 +11,6 @@ import (
 	"strings"
 )
 
-// KeyPair holds a WireGuard public/private key pair.
-type KeyPair struct {
-	PrivateKey string
-	PublicKey  string
-}
 
 // Peer represents a WireGuard peer.
 type Peer struct {
